@@ -172,6 +172,8 @@ namespace HoloLensWithOpenCVForUnityExample
 //            quad_renderer = gameObject.GetComponent<Renderer> () as Renderer;
 //            quad_renderer.sharedMaterial.SetTexture ("_MainTex", texture);
 
+            //This value is obtained from PhotoCapture's TryGetProjectionMatrix() method.I do not know whether this method is good.
+            //Please see the discussion of this thread.Https://forums.hololens.com/discussion/782/live-stream-of-locatable-camera-webcam-in-unity
             projectionMatrix = Matrix4x4.identity;
             projectionMatrix.m00 = 2.31029f;
             projectionMatrix.m01 = 0.00000f;
