@@ -891,9 +891,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9be3c273b791f5d4cb415aa461ec8e5f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  outsideClippingRatio: {x: 0, y: 0}
-  clippingOffset: {x: 0, y: 0}
-  vignetteScale: 0.3
+  outsideClippingRatio: {x: 0.17, y: 0.19}
+  clippingOffset: {x: 0.043, y: -0.041}
+  vignetteScale: 1.8
 --- !u!23 &1076083696
 MeshRenderer:
   m_ObjectHideFlags: 0
