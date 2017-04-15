@@ -75,5 +75,15 @@ namespace HoloLensWithOpenCVForUnityExample
             Application.LoadLevel ("HoloLensAnonymousFaceExample");
             #endif
         }
+
+
+        public void OnHoloLensArUcoWebCamTextureExample ()
+        {
+            #if UNITY_5_3 || UNITY_5_3_OR_NEWER
+            SceneManager.LoadScene ("HoloLensArUcoWebCamTextureExample");
+            #else
+            Application.LoadLevel ("HoloLensArUcoWebCamTextureExample");
+            #endif
+        }
     }
 }
