@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.VR.WSA.WebCam;
 using UnityEngine.VR.WSA.Input;
+using UnityEngine.EventSystems;
 
 #if UNITY_5_3 || UNITY_5_3_OR_NEWER
 using UnityEngine.SceneManagement;
@@ -52,6 +53,7 @@ namespace HoloLensWithOpenCVForUnityExample
         {
             m_Canvas = GameObject.Find ("PhotoCaptureCanvas");
             m_CanvasRenderer = m_Canvas.GetComponent<Renderer> () as Renderer;
+            m_CanvasRenderer.enabled = false;
 
             Initialize ();
         }
@@ -114,10 +116,14 @@ namespace HoloLensWithOpenCVForUnityExample
 
         void OnTappedEvent (InteractionSourceKind source, int tapCount, Ray headRay)
         {
+            if (EventSystem.current.IsPointerOverGameObject ())
+                return;
+
             if (m_CapturingPhoto) {
                 return;
             }
 
+            m_CanvasRenderer.enabled = false;
             m_CapturingPhoto = true;
             Debug.Log ("Taking picture...");
             m_PhotoCaptureObj.TakePhotoAsync (OnPhotoCaptured);
@@ -165,6 +171,7 @@ namespace HoloLensWithOpenCVForUnityExample
 
             m_Texture.wrapMode = TextureWrapMode.Clamp;
 
+            m_CanvasRenderer.enabled = true;
             m_CanvasRenderer.sharedMaterial.SetTexture ("_MainTex", m_Texture);
             m_CanvasRenderer.sharedMaterial.SetMatrix ("_WorldToCameraMatrix", worldToCameraMatrix);
             m_CanvasRenderer.sharedMaterial.SetMatrix ("_CameraProjectionMatrix", projectionMatrix);
@@ -184,11 +191,20 @@ namespace HoloLensWithOpenCVForUnityExample
             m_CapturingPhoto = false;
         }
 
+        void OnStopPhotoMode (PhotoCapture.PhotoCaptureResult result)
+        {
+            Debug.Log ("StopPhotoMode!");
+            m_PhotoCaptureObj.Dispose ();
+        }
+
         /// <summary>
         /// Raises the disable event.
         /// </summary>
         void OnDisable ()
         {
+            if (m_PhotoCaptureObj != null)
+                m_PhotoCaptureObj.StopPhotoModeAsync (OnStopPhotoMode);
+
             if (m_GestureRecognizer != null && m_GestureRecognizer.IsCapturingGestures()) {
                 m_GestureRecognizer.StopCapturingGestures ();
                 m_GestureRecognizer.TappedEvent -= OnTappedEvent;
