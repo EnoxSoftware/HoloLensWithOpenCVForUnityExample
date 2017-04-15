@@ -197,9 +197,12 @@ namespace HoloLensWithOpenCVForUnityExample
             grayMat = new Mat (webCamTextureMat.rows (), webCamTextureMat.cols (), CvType.CV_8UC1);
             regionCascade = new CascadeClassifier ();
             regionCascade.load (Utils.getFilePath ("lbpcascade_frontalface.xml"));
-            if (regionCascade.empty ()) {
-                Debug.LogError ("cascade file is not loaded.Please copy from “OpenCVForUnity/StreamingAssets/” to “Assets/StreamingAssets/” folder. ");
-            }
+
+            // "empty" method is not working on the UWP platform.
+//            if (regionCascade.empty ()) {
+//                Debug.LogError ("cascade file is not loaded.Please copy from “OpenCVForUnity/StreamingAssets/” to “Assets/StreamingAssets/” folder. ");
+//            }
+
             initThread ();
             #endif
         }
@@ -425,9 +428,11 @@ namespace HoloLensWithOpenCVForUnityExample
 
             cascade = new CascadeClassifier ();
             cascade.load(Utils.getFilePath ("haarcascade_frontalface_alt.xml"));
-            if (cascade.empty ()) {
-                Debug.LogError ("cascade file is not loaded.Please copy from “OpenCVForUnity/StreamingAssets/” to “Assets/StreamingAssets/” folder. ");
-            }
+
+            // "empty" method is not working on the UWP platform.
+//            if (cascade.empty ()) {
+//                Debug.LogError ("cascade file is not loaded.Please copy from “OpenCVForUnity/StreamingAssets/” to “Assets/StreamingAssets/” folder. ");
+//            }
 
             threadComm.shouldDetectInMultiThread = false;
 
