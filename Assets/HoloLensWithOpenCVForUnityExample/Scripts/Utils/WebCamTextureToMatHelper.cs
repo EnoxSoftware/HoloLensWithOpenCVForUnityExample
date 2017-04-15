@@ -111,7 +111,7 @@ namespace HoloLensWithOpenCVForUnityExample
         [System.Serializable]
         public class ErrorUnityEvent : UnityEngine.Events.UnityEvent<ErrorCode>
         {
-            
+
         }
 
         // Update is called once per frame
@@ -229,20 +229,20 @@ namespace HoloLensWithOpenCVForUnityExample
                 else if (webCamTexture.width > 16 && webCamTexture.height > 16) {
                 #else
                 else if (webCamTexture.didUpdateThisFrame) {
-                    #if UNITY_IOS && !UNITY_EDITOR && UNITY_5_2
-                    while (webCamTexture.width <= 16) {
-                        if (initCount > timeoutFrameCount) {
-                            isTimeout = true;
-                            break;
-                        }else {
-                            initCount++;
-                        }
-                        webCamTexture.GetPixels32 ();
-                        yield return new WaitForEndOfFrame ();
-                    }
-                    if (isTimeout) break;
-                    #endif
-                    #endif
+                #if UNITY_IOS && !UNITY_EDITOR && UNITY_5_2
+                while (webCamTexture.width <= 16) {
+                if (initCount > timeoutFrameCount) {
+                isTimeout = true;
+                break;
+                }else {
+                initCount++;
+                }
+                webCamTexture.GetPixels32 ();
+                yield return new WaitForEndOfFrame ();
+                }
+                if (isTimeout) break;
+                #endif
+                #endif
 
                     Debug.Log ("name " + webCamTexture.name + " width " + webCamTexture.width + " height " + webCamTexture.height + " fps " + webCamTexture.requestedFPS);
                     Debug.Log ("videoRotationAngle " + webCamTexture.videoRotationAngle + " videoVerticallyMirrored " + webCamTexture.videoVerticallyMirrored + " isFrongFacing " + webCamDevice.isFrontFacing);
@@ -256,7 +256,7 @@ namespace HoloLensWithOpenCVForUnityExample
 
                     #if !UNITY_EDITOR && !(UNITY_STANDALONE || UNITY_WEBGL) 
                     if (screenOrientation == ScreenOrientation.Portrait || screenOrientation == ScreenOrientation.PortraitUpsideDown) {
-                        rotatedRgbaMat = new Mat (webCamTexture.width, webCamTexture.height, CvType.CV_8UC4);
+                    rotatedRgbaMat = new Mat (webCamTexture.width, webCamTexture.height, CvType.CV_8UC4);
                     }
                     #endif
 
@@ -360,9 +360,9 @@ namespace HoloLensWithOpenCVForUnityExample
 
             #if UNITY_IOS && !UNITY_EDITOR && (UNITY_4_6_3 || UNITY_4_6_4 || UNITY_5_0_0 || UNITY_5_0_1)
             if (webCamTexture.width > 16 && webCamTexture.height > 16) {
-                return true;
+            return true;
             } else {
-                return false;
+            return false;
             }
             #else
             return webCamTexture.didUpdateThisFrame;
@@ -409,7 +409,7 @@ namespace HoloLensWithOpenCVForUnityExample
         private void flipMat (Mat mat)
         {
             int flipCode = int.MinValue;
-                
+
             if (webCamDevice.isFrontFacing) {
                 if (webCamTexture.videoRotationAngle == 0) {
                     flipCode = 1;
@@ -428,7 +428,7 @@ namespace HoloLensWithOpenCVForUnityExample
                     flipCode = -1;
                 }
             }
-                
+
             if (flipVertical) {
                 if (flipCode == int.MinValue) {
                     flipCode = 0;
@@ -440,7 +440,7 @@ namespace HoloLensWithOpenCVForUnityExample
                     flipCode = 1;
                 }
             }
-                
+
             if (flipHorizontal) {
                 if (flipCode == int.MinValue) {
                     flipCode = 1;
@@ -452,7 +452,7 @@ namespace HoloLensWithOpenCVForUnityExample
                     flipCode = 0;
                 }
             }
-                
+
             if (flipCode > int.MinValue) {
                 Core.flip (mat, mat, flipCode);
             }

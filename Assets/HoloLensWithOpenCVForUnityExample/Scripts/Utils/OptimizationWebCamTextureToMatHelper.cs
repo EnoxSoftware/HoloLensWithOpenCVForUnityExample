@@ -14,17 +14,17 @@ namespace HoloLensWithOpenCVForUnityExample
         /// The DOWNSAMPL e_ RATI.
         /// </summary>
         public float DOWNSCALE_RATIO = 2;
-        
+
         /// <summary>
         /// The SKI p_ FRAME.
         /// </summary>
         public int SKIP_FRAMES = 2;
-        
+
         /// <summary>
         /// The frame count.
         /// </summary>
         int frameCount;
-        
+
         /// <summary>
         /// The rgba mat_downscale.
         /// </summary>
