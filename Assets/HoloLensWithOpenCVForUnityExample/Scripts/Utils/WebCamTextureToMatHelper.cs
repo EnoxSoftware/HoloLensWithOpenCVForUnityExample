@@ -8,6 +8,7 @@ namespace HoloLensWithOpenCVForUnityExample
 {
     /// <summary>
     /// Web cam texture to mat helper.
+    /// v 1.0.0
     /// </summary>
     public class WebCamTextureToMatHelper : MonoBehaviour
     {
@@ -30,6 +31,11 @@ namespace HoloLensWithOpenCVForUnityExample
         /// Should use front facing.
         /// </summary>
         public bool requestIsFrontFacing = false;
+
+        /// <summary>
+        /// The requested FPS.
+        /// </summary>
+        public int requestFPS = 30;
 
         /// <summary>
         /// The flip vertical.
@@ -111,7 +117,7 @@ namespace HoloLensWithOpenCVForUnityExample
         [System.Serializable]
         public class ErrorUnityEvent : UnityEngine.Events.UnityEvent<ErrorCode>
         {
-
+            
         }
 
         // Update is called once per frame
@@ -127,30 +133,12 @@ namespace HoloLensWithOpenCVForUnityExample
         /// <summary>
         /// Init this instance.
         /// </summary>
-        public void Init ()
-        {
-            if (initWaiting)
-                return;
-
-            if (OnInitedEvent == null)
-                OnInitedEvent = new UnityEvent ();
-            if (OnDisposedEvent == null)
-                OnDisposedEvent = new UnityEvent ();
-            if (OnErrorOccurredEvent == null)
-                OnErrorOccurredEvent = new ErrorUnityEvent ();
-
-            StartCoroutine (init ());
-        }
-
-        /// <summary>
-        /// Init this instance.
-        /// </summary>
         /// <param name="deviceName">Device name.</param>
         /// <param name="requestWidth">Request width.</param>
         /// <param name="requestHeight">Request height.</param>
         /// <param name="requestIsFrontFacing">If set to <c>true</c> request is front facing.</param>
         /// <param name="OnInited">On inited.</param>
-        public void Init (string deviceName, int requestWidth, int requestHeight, bool requestIsFrontFacing)
+        public void Init (string deviceName = null, int requestWidth = 640, int requestHeight = 480, bool requestIsFrontFacing = false, int requestFPS = 30)
         {
             if (initWaiting)
                 return;
@@ -159,6 +147,7 @@ namespace HoloLensWithOpenCVForUnityExample
             this.requestWidth = requestWidth;
             this.requestHeight = requestHeight;
             this.requestIsFrontFacing = requestIsFrontFacing;
+            this.requestFPS = requestFPS;
             if (OnInitedEvent == null)
                 OnInitedEvent = new UnityEvent ();
             if (OnDisposedEvent == null)
@@ -181,7 +170,7 @@ namespace HoloLensWithOpenCVForUnityExample
 
             if (!String.IsNullOrEmpty (requestDeviceName)) {
                 //Debug.Log ("deviceName is "+requestDeviceName);
-                webCamTexture = new WebCamTexture (requestDeviceName, requestWidth, requestHeight);
+                webCamTexture = new WebCamTexture (requestDeviceName, requestWidth, requestHeight, requestFPS);
             } else {
                 //Debug.Log ("deviceName is null");
                 // Checks how many and which cameras are available on the device
@@ -190,7 +179,7 @@ namespace HoloLensWithOpenCVForUnityExample
 
                         //Debug.Log (cameraIndex + " name " + WebCamTexture.devices [cameraIndex].name + " isFrontFacing " + WebCamTexture.devices [cameraIndex].isFrontFacing);
                         webCamDevice = WebCamTexture.devices [cameraIndex];
-                        webCamTexture = new WebCamTexture (webCamDevice.name, requestWidth, requestHeight);
+                        webCamTexture = new WebCamTexture (webCamDevice.name, requestWidth, requestHeight, requestFPS);
 
                         break;
                     }
@@ -200,7 +189,7 @@ namespace HoloLensWithOpenCVForUnityExample
             if (webCamTexture == null) {
                 if (WebCamTexture.devices.Length > 0) {
                     webCamDevice = WebCamTexture.devices [0];
-                    webCamTexture = new WebCamTexture (webCamDevice.name, requestWidth, requestHeight);
+                    webCamTexture = new WebCamTexture (webCamDevice.name, requestWidth, requestHeight, requestFPS);
                 } else {
                     //Debug.Log("Camera device does not exist.");
                     initWaiting = false;
@@ -229,20 +218,20 @@ namespace HoloLensWithOpenCVForUnityExample
                 else if (webCamTexture.width > 16 && webCamTexture.height > 16) {
                 #else
                 else if (webCamTexture.didUpdateThisFrame) {
-                #if UNITY_IOS && !UNITY_EDITOR && UNITY_5_2
-                while (webCamTexture.width <= 16) {
-                if (initCount > timeoutFrameCount) {
-                isTimeout = true;
-                break;
-                }else {
-                initCount++;
-                }
-                webCamTexture.GetPixels32 ();
-                yield return new WaitForEndOfFrame ();
-                }
-                if (isTimeout) break;
-                #endif
-                #endif
+                    #if UNITY_IOS && !UNITY_EDITOR && UNITY_5_2
+                    while (webCamTexture.width <= 16) {
+                        if (initCount > timeoutFrameCount) {
+                            isTimeout = true;
+                            break;
+                        }else {
+                            initCount++;
+                        }
+                        webCamTexture.GetPixels32 ();
+                        yield return new WaitForEndOfFrame ();
+                    }
+                    if (isTimeout) break;
+                    #endif
+                    #endif
 
                     Debug.Log ("name " + webCamTexture.name + " width " + webCamTexture.width + " height " + webCamTexture.height + " fps " + webCamTexture.requestedFPS);
                     Debug.Log ("videoRotationAngle " + webCamTexture.videoRotationAngle + " videoVerticallyMirrored " + webCamTexture.videoVerticallyMirrored + " isFrongFacing " + webCamDevice.isFrontFacing);
@@ -256,7 +245,7 @@ namespace HoloLensWithOpenCVForUnityExample
 
                     #if !UNITY_EDITOR && !(UNITY_STANDALONE || UNITY_WEBGL) 
                     if (screenOrientation == ScreenOrientation.Portrait || screenOrientation == ScreenOrientation.PortraitUpsideDown) {
-                    rotatedRgbaMat = new Mat (webCamTexture.width, webCamTexture.height, CvType.CV_8UC4);
+                        rotatedRgbaMat = new Mat (webCamTexture.width, webCamTexture.height, CvType.CV_8UC4);
                     }
                     #endif
 
@@ -360,9 +349,9 @@ namespace HoloLensWithOpenCVForUnityExample
 
             #if UNITY_IOS && !UNITY_EDITOR && (UNITY_4_6_3 || UNITY_4_6_4 || UNITY_5_0_0 || UNITY_5_0_1)
             if (webCamTexture.width > 16 && webCamTexture.height > 16) {
-            return true;
+                return true;
             } else {
-            return false;
+                return false;
             }
             #else
             return webCamTexture.didUpdateThisFrame;
@@ -409,7 +398,7 @@ namespace HoloLensWithOpenCVForUnityExample
         private void flipMat (Mat mat)
         {
             int flipCode = int.MinValue;
-
+                
             if (webCamDevice.isFrontFacing) {
                 if (webCamTexture.videoRotationAngle == 0) {
                     flipCode = 1;
@@ -428,7 +417,7 @@ namespace HoloLensWithOpenCVForUnityExample
                     flipCode = -1;
                 }
             }
-
+                
             if (flipVertical) {
                 if (flipCode == int.MinValue) {
                     flipCode = 0;
@@ -440,7 +429,7 @@ namespace HoloLensWithOpenCVForUnityExample
                     flipCode = 1;
                 }
             }
-
+                
             if (flipHorizontal) {
                 if (flipCode == int.MinValue) {
                     flipCode = 1;
@@ -452,7 +441,7 @@ namespace HoloLensWithOpenCVForUnityExample
                     flipCode = 0;
                 }
             }
-
+                
             if (flipCode > int.MinValue) {
                 Core.flip (mat, mat, flipCode);
             }

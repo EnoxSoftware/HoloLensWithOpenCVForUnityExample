@@ -27,6 +27,9 @@ namespace HoloLensWithOpenCVForUnityExample
         bool m_CapturingPhoto = false;
         Texture2D m_Texture = null;
 
+        /// <summary>
+        /// The rgba mat.
+        /// </summary>
         Mat rgbaMat;
 
         /// <summary>
@@ -188,6 +191,7 @@ namespace HoloLensWithOpenCVForUnityExample
             m_Canvas.transform.rotation = rotation;
 
             Debug.Log ("Took picture!");
+            Debug.Log ("projectionMatrix:\n" + projectionMatrix.ToString());
             m_CapturingPhoto = false;
         }
 

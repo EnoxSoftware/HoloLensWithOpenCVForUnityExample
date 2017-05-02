@@ -49,40 +49,30 @@ namespace HoloLensWithOpenCVForUnityExample
             #endif
         }
         
-        public void OnHoloLensWebCamTextureAsyncDetectFaceExample ()
+        public void OnHoloLensFaceDetectionExample ()
         {
             #if UNITY_5_3 || UNITY_5_3_OR_NEWER
-            SceneManager.LoadScene ("HoloLensWebCamTextureAsyncDetectFaceExample");
+            SceneManager.LoadScene ("HoloLensFaceDetectionExample");
             #else
-            Application.LoadLevel ("HoloLensWebCamTextureAsyncDetectFaceExample");
+            Application.LoadLevel ("HoloLensFaceDetectionExample");
             #endif
         }
 
-        public void OnHoloLensWebCamTextureAsyncDetectFaceOverlayExample ()
+        public void OnHoloLensFaceDetectionOverlayExample ()
         {
             #if UNITY_5_3 || UNITY_5_3_OR_NEWER
-            SceneManager.LoadScene ("HoloLensWebCamTextureAsyncDetectFaceOverlayExample");
+            SceneManager.LoadScene ("HoloLensFaceDetectionOverlayExample");
             #else
-            Application.LoadLevel ("HoloLensWebCamTextureAsyncDetectFaceOverlayExample");
+            Application.LoadLevel ("HoloLensFaceDetectionOverlayExample");
             #endif
         }
 
-        public void OnHoloLensAnonymousFaceExample ()
+        public void OnHoloLensArUcoExample ()
         {
             #if UNITY_5_3 || UNITY_5_3_OR_NEWER
-            SceneManager.LoadScene ("HoloLensAnonymousFaceExample");
+            SceneManager.LoadScene ("HoloLensArUcoExample");
             #else
-            Application.LoadLevel ("HoloLensAnonymousFaceExample");
-            #endif
-        }
-
-
-        public void OnHoloLensArUcoWebCamTextureExample ()
-        {
-            #if UNITY_5_3 || UNITY_5_3_OR_NEWER
-            SceneManager.LoadScene ("HoloLensArUcoWebCamTextureExample");
-            #else
-            Application.LoadLevel ("HoloLensArUcoWebCamTextureExample");
+            Application.LoadLevel ("HoloLensArUcoExample");
             #endif
         }
     }

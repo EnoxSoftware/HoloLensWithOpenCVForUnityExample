@@ -11,7 +11,7 @@ Environment
 Windows 10  
 Unity 5.5.1f1  
 HoloToolKit v1.5.5.0  
-OpenCV for Unity 2.1.5
+OpenCV for Unity 2.1.6
 
 
 Setup

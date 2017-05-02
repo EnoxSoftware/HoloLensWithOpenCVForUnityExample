@@ -134,7 +134,6 @@ namespace HoloLensWithOpenCVForUnityExample
                 GameObject poolObject = getPoolObject(overlayTransform);
                 if (poolObject == null) return;
 
-                Debug.Log (rect);
                 var rectTransform = poolObject.transform;
                 rectTransform.localPosition = new Vector3(rect.x + rect.width / 2 -0.5f, 0.5f - rect.y - rect.height / 2, 0);
                 rectTransform.localScale = new Vector3(rect.width, rect.height, 1);

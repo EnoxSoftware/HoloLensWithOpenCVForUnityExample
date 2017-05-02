@@ -62,9 +62,7 @@ namespace HoloLensWithOpenCVForUnityExample
         /// </summary>
         OptimizationWebCamTextureToMatHelper webCamTextureToMatHelper;
 
-        Renderer quad_renderer = null;
-
-        OpenCVForUnity.Rect processingAreaRect;
+        private OpenCVForUnity.Rect processingAreaRect;
         public Vector2 outsideClippingRatio = new Vector2(0.17f, 0.19f);
         public Vector2 clippingOffset = new Vector2(0.043f, -0.041f);
         public float vignetteScale = 1.8f;
@@ -74,8 +72,9 @@ namespace HoloLensWithOpenCVForUnityExample
 //        public Vector2 clippingOffset = new Vector2(0.0f, 0.0f);
 //        public float vignetteScale = 0.3f;
 
-        Mat dstMatClippingROI;
+        private Mat dstMatClippingROI;
 
+        private Renderer quad_renderer = null;
 
         // Use this for initialization
         void Start ()
@@ -246,7 +245,7 @@ namespace HoloLensWithOpenCVForUnityExample
 
                 //
                 //Imgproc.rectangle (rgbaMat, new Point (0, 0), new Point (rgbaMat.width (), rgbaMat.height ()), new Scalar (255, 0, 0, 255), 2);
-                //Imgproc.rectangle (rgbaMat, displayAreaClippingRect.tl(), displayAreaClippingRect.br(), new Scalar (255, 0, 0, 255), 2);
+                //Imgproc.rectangle (rgbaMat, processingAreaRect.tl(), processingAreaRect.br(), new Scalar (255, 0, 0, 255), 2);
                 //
 
                 Utils.fastMatToTexture2D(rgbaMat, texture);
