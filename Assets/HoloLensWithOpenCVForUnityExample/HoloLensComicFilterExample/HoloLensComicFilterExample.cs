@@ -10,10 +10,10 @@ using OpenCVForUnity;
 namespace HoloLensWithOpenCVForUnityExample
 {
 
-/// <summary>
-/// HoloLens ComicFilter example.
-/// referring to the http://dev.classmethod.jp/smartphone/opencv-manga-2/.
-/// </summary>
+    /// <summary>
+    /// HoloLens ComicFilter example.
+    /// referring to the http://dev.classmethod.jp/smartphone/opencv-manga-2/.
+    /// </summary>
     [RequireComponent(typeof(OptimizationWebCamTextureToMatHelper))]
     public class HoloLensComicFilterExample : MonoBehaviour
     {
@@ -58,6 +58,11 @@ namespace HoloLensWithOpenCVForUnityExample
         Texture2D texture;
 
         /// <summary>
+        /// The quad renderer.
+        /// </summary>
+        Renderer quad_renderer;
+
+        /// <summary>
         /// The web cam texture to mat helper.
         /// </summary>
         OptimizationWebCamTextureToMatHelper webCamTextureToMatHelper;
@@ -73,8 +78,6 @@ namespace HoloLensWithOpenCVForUnityExample
 //        public float vignetteScale = 0.3f;
 
         private Mat dstMatClippingROI;
-
-        private Renderer quad_renderer = null;
 
         // Use this for initialization
         void Start ()

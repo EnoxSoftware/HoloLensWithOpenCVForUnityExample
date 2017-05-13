@@ -16,11 +16,11 @@ namespace HoloLensWithOpenCVForUnityExample
 {
 
     /// <summary>
-    /// HoloLens face detection example.
+    /// HoloLens face detection overlay example.
     /// This cord referred to https://github.com/Itseez/opencv/blob/master/modules/objdetect/src/detection_based_tracker.cpp.
     /// </summary>
     [RequireComponent(typeof(OptimizationWebCamTextureToMatHelper))]
-    public class HoloLensFaceDetectionExample : MonoBehaviour
+    public class HoloLensFaceDetectionOverlayExample : MonoBehaviour
     {
         /// <summary>
         /// The enable.
@@ -38,19 +38,14 @@ namespace HoloLensWithOpenCVForUnityExample
         public Toggle isUsingSeparateDetectionToggle;
 
         /// <summary>
-        /// The is showing webcam image.
-        /// </summary>
-        public bool isShowingWebCamImage = false;
-
-        /// <summary>
-        /// The is showing webcam image toggle.
-        /// </summary>
-        public Toggle isShowingWebCamImageToggle;
-
-        /// <summary>
         /// The min detection size ratio.
         /// </summary>
         public float minDetectionSizeRatio = 0.07f;
+
+        /// <summary>
+        /// The overlay Distance.
+        /// </summary>
+        public float overlayDistance = 1;
 
         /// <summary>
         /// The web cam texture to mat helper.
@@ -71,11 +66,6 @@ namespace HoloLensWithOpenCVForUnityExample
         /// The cascade.
         /// </summary>
         CascadeClassifier cascade;
-
-        /// <summary>
-        /// The renderer.
-        /// </summary>
-        Renderer renderer;
 
         /// <summary>
         /// The detection result.
@@ -104,16 +94,19 @@ namespace HoloLensWithOpenCVForUnityExample
         private List<Rect> detectedObjectsInRegions = new List<Rect> ();
         private List<Rect> resultObjects = new List<Rect> ();
 
+        private Matrix4x4 projectionMatrix;
+        private RectOverlay rectOverlay;
+
         // Use this for initialization
         void Start ()
         {
             isUsingSeparateDetectionToggle.isOn = isUsingSeparateDetection;
-            isShowingWebCamImageToggle.isOn = isShowingWebCamImage;
 
             webCamTextureToMatHelper = gameObject.GetComponent<OptimizationWebCamTextureToMatHelper> ();
             webCamTextureToMatHelper.Init ();
 
             rectangleTracker = new RectangleTracker ();
+            rectOverlay = gameObject.GetComponent<RectOverlay> ();
         }
 
         /// <summary>
@@ -125,17 +118,11 @@ namespace HoloLensWithOpenCVForUnityExample
 
             Mat webCamTextureMat = webCamTextureToMatHelper.GetDownScaleMat(webCamTextureToMatHelper.GetMat ());
 
-            texture = new Texture2D (webCamTextureMat.cols (), webCamTextureMat.rows (), TextureFormat.RGBA32, false);
-
             Debug.Log ("Screen.width " + Screen.width + " Screen.height " + Screen.height + " Screen.orientation " + Screen.orientation);
-
-            renderer = gameObject.GetComponent<Renderer> () as Renderer;
-            renderer.sharedMaterial.SetTexture ("_MainTex", texture);
-            renderer.sharedMaterial.SetVector ("_VignetteOffset", new Vector4(0, 0));
 
             //This value is obtained from PhotoCapture's TryGetProjectionMatrix() method.I do not know whether this method is good.
             //Please see the discussion of this thread.Https://forums.hololens.com/discussion/782/live-stream-of-locatable-camera-webcam-in-unity
-            Matrix4x4 projectionMatrix = Matrix4x4.identity;
+            projectionMatrix = Matrix4x4.identity;
             projectionMatrix.m00 = 2.31029f;
             projectionMatrix.m01 = 0.00000f;
             projectionMatrix.m02 = 0.09614f;
@@ -152,14 +139,11 @@ namespace HoloLensWithOpenCVForUnityExample
             projectionMatrix.m31 = 0.00000f;
             projectionMatrix.m32 = -1.00000f;
             projectionMatrix.m33 = 0.00000f;
-            renderer.sharedMaterial.SetMatrix ("_CameraProjectionMatrix", projectionMatrix);
-            renderer.sharedMaterial.SetFloat ("_VignetteScale", 0.0f);
 
 
             grayMat = new Mat (webCamTextureMat.rows (), webCamTextureMat.cols (), CvType.CV_8UC1);
             cascade = new CascadeClassifier ();
             cascade.load (Utils.getFilePath ("lbpcascade_frontalface.xml"));
-//            cascade.load (Utils.getFilePath ("haarcascade_frontalface_alt.xml"));
 
             // "empty" method is not working on the UWP platform.
             //            if (cascade.empty ()) {
@@ -219,7 +203,7 @@ namespace HoloLensWithOpenCVForUnityExample
                 }
             }
 
-            if (webCamTextureToMatHelper.IsPlaying () && webCamTextureToMatHelper.DidUpdateThisFrame ()) {
+            if (webCamTextureToMatHelper.IsPlaying () && webCamTextureToMatHelper.DidUpdateThisFrame ()) { 
 
                 Mat rgbaMat = webCamTextureToMatHelper.GetDownScaleMat(webCamTextureToMatHelper.GetMat ());
 
@@ -232,11 +216,6 @@ namespace HoloLensWithOpenCVForUnityExample
                     grayMat.copyTo (grayMat4Thread);
 
                     StartThread (ThreadWorker);
-                }
-
-                if (!isShowingWebCamImage) {
-                    // fill all black.
-                    Imgproc.rectangle (rgbaMat, new Point (0, 0), new Point (rgbaMat.width (), rgbaMat.height ()), new Scalar (0, 0, 0, 0), -1);
                 }
 
                 Rect[] rects;
@@ -253,10 +232,7 @@ namespace HoloLensWithOpenCVForUnityExample
 
 //                    rects = rectangleTracker.CreateCorrectionBySpeedOfRects ();
 
-                    for (int i = 0; i < rects.Length; i++) {
-                        //Debug.Log ("detected face[" + i + "] " + rects [i]);
-                        Imgproc.rectangle (rgbaMat, new Point (rects [i].x, rects [i].y), new Point (rects [i].x + rects [i].width, rects [i].y + rects [i].height), new Scalar (255, 0, 0, 255), 2);
-                    }
+                    DrawRects (rects, grayMat.width(), grayMat.height());
 
                 } else {
 
@@ -266,19 +242,19 @@ namespace HoloLensWithOpenCVForUnityExample
                         //Debug.Log("process: get rectsWhereRegions were got from detectionResult");
                         rectsWhereRegions = detectionResult.toArray ();
 
-                        rects = rectsWhereRegions;
-                        for (int i = 0; i < rects.Length; i++) {
-                            Imgproc.rectangle (rgbaMat, new Point (rects [i].x, rects [i].y), new Point (rects [i].x + rects [i].width, rects [i].y + rects [i].height), new Scalar (0, 0, 255, 255), 1);
-                        }
+//                        rects = rectsWhereRegions;
+//                        for (int i = 0; i < rects.Length; i++) {
+//                            Imgproc.rectangle (rgbaMat, new Point (rects [i].x, rects [i].y), new Point (rects [i].x + rects [i].width, rects [i].y + rects [i].height), new Scalar (0, 0, 255, 255), 1);
+//                        }
 
                     } else {
                         //Debug.Log("process: get rectsWhereRegions from previous positions");
                         rectsWhereRegions = rectangleTracker.CreateCorrectionBySpeedOfRects ();
 
-                        rects = rectsWhereRegions;
-                        for (int i = 0; i < rects.Length; i++) {
-                            Imgproc.rectangle (rgbaMat, new Point (rects [i].x, rects [i].y), new Point (rects [i].x + rects [i].width, rects [i].y + rects [i].height), new Scalar (0, 255, 0, 255), 1);
-                        }
+//                        rects = rectsWhereRegions;
+//                        for (int i = 0; i < rects.Length; i++) {
+//                            Imgproc.rectangle (rgbaMat, new Point (rects [i].x, rects [i].y), new Point (rects [i].x + rects [i].width, rects [i].y + rects [i].height), new Scalar (0, 255, 0, 255), 1);
+//                        }
                     }
 
                     detectedObjectsInRegions.Clear ();
@@ -293,34 +269,56 @@ namespace HoloLensWithOpenCVForUnityExample
                     rectangleTracker.GetObjects (resultObjects, true);
 
                     rects = resultObjects.ToArray ();
-                    for (int i = 0; i < rects.Length; i++) {
-                        //Debug.Log ("detected face[" + i + "] " + rects [i]);
-                        Imgproc.rectangle (rgbaMat, new Point (rects [i].x, rects [i].y), new Point (rects [i].x + rects [i].width, rects [i].y + rects [i].height), new Scalar (255, 0, 0, 255), 2);
-                    }
+                    DrawRects (rects, grayMat.width(), grayMat.height());
                 }
-                    
-                Utils.matToTexture2D (rgbaMat, texture, webCamTextureToMatHelper.GetBufferColors ());
             }
 
             if (webCamTextureToMatHelper.IsPlaying ()) {
 
                 Matrix4x4 cameraToWorldMatrix = Camera.main.cameraToWorldMatrix;;
-                Matrix4x4 worldToCameraMatrix = cameraToWorldMatrix.inverse;
 
-                texture.wrapMode = TextureWrapMode.Clamp;
+                Vector3 ccCameraSpacePos = UnProjectVector(projectionMatrix, new Vector3(0.0f, 0.0f, overlayDistance));
+                Vector3 tlCameraSpacePos = UnProjectVector(projectionMatrix, new Vector3(-overlayDistance, overlayDistance, overlayDistance));
+ 
+                //position
+                Vector3 position = cameraToWorldMatrix.MultiplyPoint3x4(ccCameraSpacePos);
+                gameObject.transform.position = position;
 
-                renderer.sharedMaterial.SetMatrix ("_WorldToCameraMatrix", worldToCameraMatrix);
-
-                // Position the canvas object slightly in front
-                // of the real world web camera.
-                Vector3 position = cameraToWorldMatrix.GetColumn (3) - cameraToWorldMatrix.GetColumn (2);
+                //scale
+                Vector3 scale = new Vector3(Mathf.Abs(tlCameraSpacePos.x - ccCameraSpacePos.x)*2, Mathf.Abs(tlCameraSpacePos.y - ccCameraSpacePos.y)*2, 1);
+                gameObject.transform.localScale = scale;
 
                 // Rotate the canvas object so that it faces the user.
                 Quaternion rotation = Quaternion.LookRotation (-cameraToWorldMatrix.GetColumn (2), cameraToWorldMatrix.GetColumn (1));
-
-                gameObject.transform.position = position;
                 gameObject.transform.rotation = rotation;
+
+                rectOverlay.UpdateOverlayTransform(gameObject.transform);
             }
+        }
+
+        private Vector3 UnProjectVector(Matrix4x4 proj, Vector3 to)
+        {
+            Vector3 from = new Vector3(0, 0, 0);
+            var axsX = proj.GetRow(0);
+            var axsY = proj.GetRow(1);
+            var axsZ = proj.GetRow(2);
+            from.z = to.z / axsZ.z;
+            from.y = (to.y - (from.z * axsY.z)) / axsY.y;
+            from.x = (to.x - (from.z * axsX.z)) / axsX.x;
+            return from;
+        }
+
+        private void DrawRects(Rect[] rects, float imageWidth, float imageHeight)
+        {
+            UnityEngine.Rect[] overlayRects = new UnityEngine.Rect[rects.Length];
+
+            for (int i = 0; i < rects.Length; i++) {
+                overlayRects[i] = new UnityEngine.Rect(rects[i].x/imageWidth
+                    , rects[i].y/imageHeight
+                    , rects[i].width/imageWidth
+                    , rects[i].height/imageHeight);
+            }
+            rectOverlay.DrawRects(overlayRects);
         }
 
         private void StartThread(Action action)
@@ -466,7 +464,7 @@ namespace HoloLensWithOpenCVForUnityExample
         }
 
         /// <summary>
-        /// Raises the is using separate detectio toggle event.
+        /// Raises the is using separate detection toggle event.
         /// </summary>
         public void OnIsUsingSeparateDetectionToggle ()
         {
@@ -478,18 +476,6 @@ namespace HoloLensWithOpenCVForUnityExample
 
             if (rectangleTracker != null)
                 rectangleTracker.Reset ();
-        }
-
-        /// <summary>
-        /// Raises the is showing webcam image toggle event.
-        /// </summary>
-        public void OnIsShowingWebCamImageToggle ()
-        {
-            if (isShowingWebCamImageToggle.isOn) {
-                isShowingWebCamImage = true;
-            } else {
-                isShowingWebCamImage = false;
-            }
         }
     }
 }

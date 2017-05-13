@@ -9,19 +9,19 @@ Demo Video
 Environment
 -----
 Windows 10  
-Unity 5.5.1f1  
-HoloToolKit v1.5.5.0  
+Unity 5.5.2f1  
+HoloToolKit v1.5.6.0  
 OpenCV for Unity 2.1.6
 
 
 Setup
 -----
 * Create New Project. (HoloLensWithOpenCVForUnityExample)
-* Import HoloToolKit-Unity-v1.5.5.0.unitypackage. (excluding "HoloToolKit-Examples" folder)
+* Import HoloToolKit-Unity-v1.5.6.0.unitypackage.
 * Setup HoloToolKit. (HoloToolKit > Configure > Apply HoloLens Project Setting)
 * Import OpenCVForUnity.
 * Import HoloLensWithOpenCVForUnityExample.unitypackage.
-* Add the "Assets/HoloLensWithOpenCVForUnityExample/Scenes/*.unity" files to "Scenes In Build" list in "Build Settings" window.
+* Add the "Assets/HoloLensWithOpenCVForUnityExample/*.unity" files to "Scenes In Build" list in "Build Settings" window.
 * Add the "WebCam" to "Publishing Settings > Capabilities" checklist in the "Player Settings" window.
 * Build and Deploy. (See [https://developer.microsoft.com/en-us/windows/holographic/holograms_100](https://developer.microsoft.com/en-us/windows/holographic/holograms_100))
 *  (Print AR marker "ArUcoMarker_DICT_6X6_250_ID1.pdf" on A4 size paper)
