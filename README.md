@@ -3,15 +3,15 @@ HoloLens With OpenCVForUnity Example
 
 Demo Video
 -----
-[![](http://img.youtube.com/vi/bPCzhE0GP-g/0.jpg)](https://youtu.be/bPCzhE0GP-g)
+[![](http://img.youtube.com/vi/SdzsedkTpCI/0.jpg)](https://youtu.be/SdzsedkTpCI)
 
 
 Environment
 -----
 Windows 10  
 Unity 5.5.2f1  
-HoloToolKit v1.5.6.0  
-OpenCV for Unity 2.1.6
+HoloToolKit v1.5.6.0 ([https://github.com/Microsoft/HoloToolkit-Unity/releases](https://github.com/Microsoft/HoloToolkit-Unity/releases))
+OpenCV for Unity 2.1.6 ([https://www.assetstore.unity3d.com/en/#!/content/21088](https://www.assetstore.unity3d.com/en/#!/content/21088))
 
 
 Setup
@@ -36,7 +36,6 @@ ScreenShot
 
 ![screenshot04.jpg](screenshot04.jpg) 
 
-![screenshot05.jpg](screenshot05.jpg) 
 
 
 ![Light_Frame.png](Light_Frame.png)
