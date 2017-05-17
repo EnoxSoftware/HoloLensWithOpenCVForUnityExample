@@ -10,8 +10,8 @@ Environment
 -----
 Windows 10  
 Unity 5.5.2f1  
-HoloToolKit v1.5.6.0 ([https://github.com/Microsoft/HoloToolkit-Unity/releases](https://github.com/Microsoft/HoloToolkit-Unity/releases))
-OpenCV for Unity 2.1.6 ([https://www.assetstore.unity3d.com/en/#!/content/21088](https://www.assetstore.unity3d.com/en/#!/content/21088))
+HoloToolKit v1.5.6.0 ([https://github.com/Microsoft/HoloToolkit-Unity/releases](https://github.com/Microsoft/HoloToolkit-Unity/releases))  
+OpenCV for Unity 2.1.6 ([https://www.assetstore.unity3d.com/en/#!/content/21088](https://www.assetstore.unity3d.com/en/#!/content/21088))  
 
 
 Setup
