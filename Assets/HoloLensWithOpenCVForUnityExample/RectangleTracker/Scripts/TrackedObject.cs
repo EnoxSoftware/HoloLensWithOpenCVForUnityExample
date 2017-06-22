@@ -2,7 +2,6 @@
 
 namespace OpenCVForUnity.RectangleTrack
 {
-
     public enum TrackedState : int
     {
         NEW = 0,
@@ -39,11 +38,11 @@ namespace OpenCVForUnity.RectangleTrack
 
             lastPositions.Add(rect.clone());
 
-            _id = getNextId();
+            _id = GetNextId();
             id = _id;
         }
 
-        static int getNextId()
+        static int GetNextId()
         {
             _id++;
             return _id;

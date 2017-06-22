@@ -6,59 +6,56 @@ namespace HoloLensWithOpenCVForUnityExample
     [RequireComponent(typeof(MeshRenderer), typeof(MeshFilter), typeof(MeshCollider))]
     public class RectQuad : MonoBehaviour
     {
-
-        private MeshFilter meshFilter;
-
-        private MeshRenderer meshRenderer;
-
-        private MeshCollider meshCollider;
-
-        public MeshFilter MeshFilter
+        public MeshFilter meshFilter
         {
-            get { return meshFilter; }
+            get { return _meshFilter; }
         }
-        public MeshRenderer MeshRenderer
-        {
-            get { return meshRenderer; }
-        }
-        public MeshCollider MeshCollider
-        {
-            get { return meshCollider; }
-        }
+        private MeshFilter _meshFilter;
 
-        public int Id
+        public MeshRenderer meshRenderer
         {
-            get { return id; }
-            set { id = value; }
+            get { return _meshRenderer; }
         }
-        private int id = 0;
+        private MeshRenderer _meshRenderer;
 
-        public Material Material
+        public MeshCollider meshCollider
         {
-            get { return material; }
+            get { return _meshCollider; }
         }
-        private Material material;
+        private MeshCollider _meshCollider;
 
+        public int id
+        {
+            get { return _id; }
+            set { _id = value; }
+        }
+        private int _id = 0;
+
+        public Material material
+        {
+            get { return _material; }
+        }
+        private Material _material;
 
         void Awake()
         {
-            meshFilter = this.GetComponent<MeshFilter>();
-            meshRenderer = this.GetComponent<MeshRenderer>();
-            meshCollider = this.GetComponent<MeshCollider>();
+            _meshFilter = this.GetComponent<MeshFilter>();
+            _meshRenderer = this.GetComponent<MeshRenderer>();
+            _meshCollider = this.GetComponent<MeshCollider>();
 
-            if (meshRenderer.material == null)
+            if (_meshRenderer.material == null)
                 throw new Exception("Material does not exist.");
 
-            material = meshRenderer.material;
-            meshRenderer.sortingOrder = 32767;
+            _material = _meshRenderer.material;
+            _meshRenderer.sortingOrder = 32767;
         }
 
         void OnDestroy(){
-            if(meshFilter != null && meshFilter.mesh != null){
-                DestroyImmediate(meshFilter.mesh);
+            if(_meshFilter != null && _meshFilter.mesh != null){
+                DestroyImmediate(_meshFilter.mesh);
             }
-            if(meshRenderer != null && meshRenderer.materials != null){
-                foreach(var m in meshRenderer.materials){
+            if(_meshRenderer != null && _meshRenderer.materials != null){
+                foreach(var m in _meshRenderer.materials){
                     DestroyImmediate(m);
                 }
             }

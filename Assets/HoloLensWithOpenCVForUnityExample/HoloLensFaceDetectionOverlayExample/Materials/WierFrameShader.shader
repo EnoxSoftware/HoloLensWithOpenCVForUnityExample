@@ -1,4 +1,6 @@
-﻿    Shader "Custom/WireFrame"
+﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
+    Shader "Custom/WireFrame"
     {
     Properties
     {
@@ -49,7 +51,7 @@
     v2f vert (appdata v)
     {
     v2f o;
-    o.pos = mul( UNITY_MATRIX_MVP, v.vertex);
+    o.pos = UnityObjectToClipPos( v.vertex);
     o.texcoord1 = v.texcoord1;
     o.color = v.color;
     return o;

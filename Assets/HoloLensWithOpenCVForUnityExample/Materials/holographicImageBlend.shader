@@ -1,4 +1,6 @@
-﻿Shader "AR/HolographicImageBlend"
+﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
+Shader "AR/HolographicImageBlend"
 {
     // referring to the https://forum.unity3d.com/threads/holographic-photo-blending-with-photocapture.416023/.
 
@@ -42,7 +44,7 @@
             v2f vert (appdata v)
             {
                 v2f o;
-                o.vertexPositionInProjectionSpace = mul(UNITY_MATRIX_MVP, v.vertex);
+                o.vertexPositionInProjectionSpace = UnityObjectToClipPos(v.vertex);
  
                 // Calculate the vertex position in world space.
                 float4 vertexPositionInWorldSpace = mul(unity_ObjectToWorld, float4(v.vertex.xyz,1));

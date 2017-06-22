@@ -6,31 +6,30 @@ namespace HoloLensWithOpenCVForUnityExample
 {
     public class RectOverlay : MonoBehaviour
     {
-
-        public int Interval = 1;
-        public int PoolSize = 50;
+        public int interval = 1;
+        public int poolSize = 50;
         
         [SerializeField]
-        private GameObject baseObject;
-        public GameObject BaseObject
+        private GameObject _baseObject;
+        public GameObject baseObject
         {
             get {
-                return baseObject;
+                return _baseObject;
             }
             set {
-                baseObject = value;
-                setBaseObject(baseObject);
+                _baseObject = value;
+                SetBaseObject(_baseObject);
             }
         }
         
-        public float Width
+        public float width
         {
             get {
                 return targetWidth;
             }
         }
         
-        public float Height
+        public float height
         {
             get {
                 return targetHeight;
@@ -45,7 +44,7 @@ namespace HoloLensWithOpenCVForUnityExample
 
         void Awake()
         {
-            init("RectOverlay");
+            Initialize("RectOverlay");
         }
 
         void OnDestroy()
@@ -61,7 +60,7 @@ namespace HoloLensWithOpenCVForUnityExample
             }
         }
 
-        protected GameObject getPoolObject(Transform parent)
+        protected GameObject GetPoolObject(Transform parent)
         {
             if(objectPool == null) return null;
             
@@ -74,18 +73,18 @@ namespace HoloLensWithOpenCVForUnityExample
             }
         }
         
-        protected virtual void init(String name)
+        protected virtual void Initialize(String name)
         {
             GameObject overlay = new GameObject(name);
 
             overlayTransform = overlay.transform;
             overlayTransform.parent = gameObject.transform.parent;
             
-            if(baseObject != null)
-                setBaseObject (baseObject);
+            if(_baseObject != null)
+                SetBaseObject (_baseObject);
         }
 
-        protected virtual void setBaseObject (GameObject obj)
+        protected virtual void SetBaseObject (GameObject obj)
         {
             if (obj.GetComponent<RectQuad>() == null)
             {
@@ -99,9 +98,9 @@ namespace HoloLensWithOpenCVForUnityExample
             
             objectPool = overlayTransform.gameObject.AddComponent<ObjectPool>();
             objectPool.prefab = obj;
-            objectPool.maxCount = PoolSize;
-            objectPool.prepareCount = (int)PoolSize / 2;
-            objectPool.Interval = Interval;
+            objectPool.maxCount = poolSize;
+            objectPool.prepareCount = (int)poolSize / 2;
+            objectPool.Interval = interval;
         }
 
         public virtual void UpdateOverlayTransform(Transform targetTransform)
@@ -131,7 +130,7 @@ namespace HoloLensWithOpenCVForUnityExample
 
             foreach (UnityEngine.Rect rect in rects)
             {
-                GameObject poolObject = getPoolObject(overlayTransform);
+                GameObject poolObject = GetPoolObject(overlayTransform);
                 if (poolObject == null) return;
 
                 var rectTransform = poolObject.transform;

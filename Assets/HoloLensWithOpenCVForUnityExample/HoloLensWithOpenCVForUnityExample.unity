@@ -175,7 +175,7 @@ GameObject:
   - component: {fileID: 130009891}
   - component: {fileID: 130009890}
   m_Layer: 5
-  m_Name: HoloLensFaceDetectionExample
+  m_Name: HoloLensFaceDetectionExampleButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -261,7 +261,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 384048162}
-        m_MethodName: OnHoloLensFaceDetectionExample
+        m_MethodName: OnHoloLensFaceDetectionExampleButtonClick
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -321,7 +321,7 @@ GameObject:
   - component: {fileID: 155358853}
   - component: {fileID: 155358852}
   m_Layer: 5
-  m_Name: HoloLensPhotoCaptureExample
+  m_Name: HoloLensPhotoCaptureExampleButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -407,7 +407,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 384048162}
-        m_MethodName: OnHoloLensPhotoCaptureExample
+        m_MethodName: OnHoloLensPhotoCaptureExampleButtonClick
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1086,7 +1086,7 @@ GameObject:
   - component: {fileID: 984789612}
   - component: {fileID: 984789611}
   m_Layer: 5
-  m_Name: HoloLensArUcoExample
+  m_Name: HoloLensArUcoExampleButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1172,7 +1172,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 384048162}
-        m_MethodName: OnHoloLensArUcoExample
+        m_MethodName: OnHoloLensArUcoExampleButtonClick
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1309,7 +1309,7 @@ GameObject:
   - component: {fileID: 1170313463}
   - component: {fileID: 1170313462}
   m_Layer: 5
-  m_Name: HoloLensFaceDetectionOverlayExample
+  m_Name: HoloLensFaceDetectionOverlayExampleButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1395,7 +1395,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 384048162}
-        m_MethodName: OnHoloLensFaceDetectionOverlayExample
+        m_MethodName: OnHoloLensFaceDetectionOverlayExampleButtonClick
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1541,7 +1541,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 384048162}
-        m_MethodName: OnShowLicenseButton
+        m_MethodName: OnShowLicenseButtonClick
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1868,7 +1868,7 @@ GameObject:
   - component: {fileID: 1867454789}
   - component: {fileID: 1867454788}
   m_Layer: 5
-  m_Name: HoloLensComicFilterExample
+  m_Name: HoloLensComicFilterExampleButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1954,7 +1954,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 384048162}
-        m_MethodName: OnHoloLensComicFilterExample
+        m_MethodName: OnHoloLensComicFilterExampleButtonClick
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

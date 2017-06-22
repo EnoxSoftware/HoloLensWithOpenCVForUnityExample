@@ -230,7 +230,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1076083695}
-        m_MethodName: OnBackButton
+        m_MethodName: OnBackButtonClick
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -376,7 +376,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1076083695}
-        m_MethodName: OnPlayButton
+        m_MethodName: OnPlayButtonClick
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -434,7 +434,7 @@ GameObject:
   - component: {fileID: 151719824}
   - component: {fileID: 151719823}
   m_Layer: 5
-  m_Name: IsUsingSeparateDetectionToggle
+  m_Name: UseSeparateDetectionToggle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -521,7 +521,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1076083695}
-        m_MethodName: OnIsUsingSeparateDetectionToggle
+        m_MethodName: OnUseSeparateDetectionToggleValueChanged
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -783,7 +783,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1076083695}
-        m_MethodName: OnPauseButton
+        m_MethodName: OnPauseButtonClick
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1209,11 +1209,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9b27c2b2cc8cce34591203b638eba5c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enable: 1
-  isUsingSeparateDetection: 1
-  isUsingSeparateDetectionToggle: {fileID: 151719824}
-  isShowingWebCamImage: 0
-  isShowingWebCamImageToggle: {fileID: 1243491303}
+  enableDetection: 1
+  useSeparateDetection: 1
+  useSeparateDetectionToggle: {fileID: 151719824}
+  displayCameraImage: 0
+  displayCameraImageToggle: {fileID: 1243491303}
   minDetectionSizeRatio: 0.07
 --- !u!23 &1076083696
 MeshRenderer:
@@ -1291,18 +1291,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 28e142b476c838049871b666621dda2e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  requestDeviceName: 
-  requestWidth: 896
-  requestHeight: 504
-  requestIsFrontFacing: 0
+  requestedDeviceName: 
+  requestedWidth: 640
+  requestedHeight: 480
+  requestedIsFrontFacing: 0
+  requestedFPS: 30
   flipVertical: 0
   flipHorizontal: 0
   timeoutFrameCount: 300
-  OnInitedEvent:
+  onInitialized:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1076083695}
-        m_MethodName: OnWebCamTextureToMatHelperInited
+        m_MethodName: OnWebCamTextureToMatHelperInitialized
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1314,7 +1315,7 @@ MonoBehaviour:
         m_CallState: 2
     m_TypeName: UnityEngine.Events.UnityEvent, UnityEngine, Version=0.0.0.0, Culture=neutral,
       PublicKeyToken=null
-  OnDisposedEvent:
+  onDisposed:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1076083695}
@@ -1330,7 +1331,7 @@ MonoBehaviour:
         m_CallState: 2
     m_TypeName: UnityEngine.Events.UnityEvent, UnityEngine, Version=0.0.0.0, Culture=neutral,
       PublicKeyToken=null
-  OnErrorOccurredEvent:
+  onErrorOccurred:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1076083695}
@@ -1346,8 +1347,8 @@ MonoBehaviour:
         m_CallState: 2
     m_TypeName: HoloLensWithOpenCVForUnityExample.WebCamTextureToMatHelper+ErrorUnityEvent,
       Assembly-CSharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-  DOWNSCALE_RATIO: 2
-  SKIP_FRAMES: 1
+  downscaleRatio: 2
+  frameSkippingRatio: 2
 --- !u!20 &1076969803 stripped
 Camera:
   m_PrefabParentObject: {fileID: 20000013304850028, guid: d379ed0a5618c9f479f58bd83a2d0ad3,
@@ -1452,7 +1453,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1076083695}
-        m_MethodName: OnChangeCameraButton
+        m_MethodName: OnChangeCameraButtonClick
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1587,7 +1588,7 @@ GameObject:
   - component: {fileID: 1243491303}
   - component: {fileID: 1243491302}
   m_Layer: 5
-  m_Name: IsShowingWebCamImageToggle
+  m_Name: DisplayCameraImageToggle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1674,7 +1675,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1076083695}
-        m_MethodName: OnIsShowingWebCamImageToggle
+        m_MethodName: OnDisplayCameraImageToggleValueChanged
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1686,7 +1687,7 @@ MonoBehaviour:
         m_CallState: 2
     m_TypeName: UnityEngine.UI.Toggle+ToggleEvent, UnityEngine.UI, Version=1.0.0.0,
       Culture=neutral, PublicKeyToken=null
-  m_IsOn: 0
+  m_IsOn: 1
 --- !u!1 &1259778279
 GameObject:
   m_ObjectHideFlags: 0
@@ -1823,7 +1824,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: UsingSeparateDetection
+  m_Text: UseSeparateDetection
 --- !u!222 &1317361340
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2006,7 +2007,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1076083695}
-        m_MethodName: OnStopButton
+        m_MethodName: OnStopButtonClick
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -2521,7 +2522,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: ShowingWebCamImage
+  m_Text: DisplayCameraImage
 --- !u!222 &1976741144
 CanvasRenderer:
   m_ObjectHideFlags: 0

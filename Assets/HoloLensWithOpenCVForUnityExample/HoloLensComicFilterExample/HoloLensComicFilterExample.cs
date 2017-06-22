@@ -9,9 +9,8 @@ using OpenCVForUnity;
 
 namespace HoloLensWithOpenCVForUnityExample
 {
-
     /// <summary>
-    /// HoloLens ComicFilter example.
+    /// HoloLens ComicFilter example. (Example of the comic filter using the OpenCVForUnity on Hololens)
     /// referring to the http://dev.classmethod.jp/smartphone/opencv-manga-2/.
     /// </summary>
     [RequireComponent(typeof(OptimizationWebCamTextureToMatHelper))]
@@ -67,7 +66,7 @@ namespace HoloLensWithOpenCVForUnityExample
         /// </summary>
         OptimizationWebCamTextureToMatHelper webCamTextureToMatHelper;
 
-        private OpenCVForUnity.Rect processingAreaRect;
+        OpenCVForUnity.Rect processingAreaRect;
         public Vector2 outsideClippingRatio = new Vector2(0.17f, 0.19f);
         public Vector2 clippingOffset = new Vector2(0.043f, -0.041f);
         public float vignetteScale = 1.8f;
@@ -77,21 +76,21 @@ namespace HoloLensWithOpenCVForUnityExample
 //        public Vector2 clippingOffset = new Vector2(0.0f, 0.0f);
 //        public float vignetteScale = 0.3f;
 
-        private Mat dstMatClippingROI;
+        Mat dstMatClippingROI;
 
         // Use this for initialization
         void Start ()
         {
             webCamTextureToMatHelper = gameObject.GetComponent<OptimizationWebCamTextureToMatHelper> ();
-            webCamTextureToMatHelper.Init ();
+            webCamTextureToMatHelper.Initialize ();
         }
 
         /// <summary>
-        /// Raises the web cam texture to mat helper inited event.
+        /// Raises the web cam texture to mat helper initialized event.
         /// </summary>
-        public void OnWebCamTextureToMatHelperInited ()
+        public void OnWebCamTextureToMatHelperInitialized ()
         {
-            Debug.Log ("OnWebCamTextureToMatHelperInited");
+            Debug.Log ("OnWebCamTextureToMatHelperInitialized");
         
             Mat webCamTextureMat = webCamTextureToMatHelper.GetDownScaleMat( webCamTextureToMatHelper.GetMat ());
         
@@ -286,9 +285,9 @@ namespace HoloLensWithOpenCVForUnityExample
         }
 
         /// <summary>
-        /// Raises the back button event.
+        /// Raises the back button click event.
         /// </summary>
-        public void OnBackButton ()
+        public void OnBackButtonClick ()
         {
             #if UNITY_5_3 || UNITY_5_3_OR_NEWER
             SceneManager.LoadScene ("HoloLensWithOpenCVForUnityExample");
@@ -298,35 +297,35 @@ namespace HoloLensWithOpenCVForUnityExample
         }
 
         /// <summary>
-        /// Raises the play button event.
+        /// Raises the play button click event.
         /// </summary>
-        public void OnPlayButton ()
+        public void OnPlayButtonClick ()
         {
             webCamTextureToMatHelper.Play ();
         }
 
         /// <summary>
-        /// Raises the pause button event.
+        /// Raises the pause button click event.
         /// </summary>
-        public void OnPauseButton ()
+        public void OnPauseButtonClick ()
         {
             webCamTextureToMatHelper.Pause ();
         }
 
         /// <summary>
-        /// Raises the stop button event.
+        /// Raises the stop button click event.
         /// </summary>
-        public void OnStopButton ()
+        public void OnStopButtonClick ()
         {
             webCamTextureToMatHelper.Stop ();
         }
 
         /// <summary>
-        /// Raises the change camera button event.
+        /// Raises the change camera button click event.
         /// </summary>
-        public void OnChangeCameraButton ()
+        public void OnChangeCameraButtonClick ()
         {
-            webCamTextureToMatHelper.Init (null, webCamTextureToMatHelper.requestWidth, webCamTextureToMatHelper.requestHeight, !webCamTextureToMatHelper.requestIsFrontFacing);
+            webCamTextureToMatHelper.Initialize (null, webCamTextureToMatHelper.requestedWidth, webCamTextureToMatHelper.requestedHeight, !webCamTextureToMatHelper.requestedIsFrontFacing);
         }
     }
 }

@@ -8,30 +8,30 @@ namespace OpenCVForUnity.RectangleTrack
     /// <summary>
     /// Rectangle tracker.
     /// This cord referred to https://github.com/Itseez/opencv/blob/master/modules/objdetect/src/detection_based_tracker.cpp.
-    /// v 1.0.0
+    /// v 1.0.1
     /// </summary>
     public class RectangleTracker : IDisposable
     {
-        public List<TrackedObject> TrackedObjects
+        public List<TrackedObject> trackedObjects
         {
-            get { return trackedObjects; }
+            get { return _trackedObjects; }
         }
-        private List<TrackedObject> trackedObjects;
+        private List<TrackedObject> _trackedObjects;
 
 
-        public TrackerParameters TrackerParameters
+        public TrackerParameters trackerParameters
         {
-            get { return trackerParameters; }
+            get { return _trackerParameters; }
             set
             {
                 if (value == null)
                 {
                     throw new ArgumentNullException("value");
                 }
-                trackerParameters = value;
+                _trackerParameters = value;
             }
         }
-        private TrackerParameters trackerParameters;
+        private TrackerParameters _trackerParameters;
 
 
         public List<float> weightsPositionsSmoothing
@@ -64,15 +64,15 @@ namespace OpenCVForUnity.RectangleTrack
 
         public RectangleTracker(TrackerParameters trackerParamerers = null)
         {
-            trackedObjects = new List<TrackedObject>();
+            _trackedObjects = new List<TrackedObject>();
 
             if (trackerParamerers != null)
             {
-                this.trackerParameters = trackerParamerers;
+                this._trackerParameters = trackerParamerers;
             }
             else
             {
-                this.trackerParameters = new TrackerParameters();
+                this._trackerParameters = new TrackerParameters();
             }
 
             _weightsPositionsSmoothing.Add(1);
@@ -92,20 +92,20 @@ namespace OpenCVForUnity.RectangleTrack
         {
             result.Clear();
 
-            int count = trackedObjects.Count;
+            int count = _trackedObjects.Count;
             for (int i = 0; i < count; i++)
             {
                 Rect r;
                 if (smoothing)
                 {
-                    r = getSmoothingRect(i);
+                    r = GetSmoothingRect(i);
                 }
                 else
                 {
-                    r = trackedObjects[i].position;
+                    r = _trackedObjects[i].position;
                 }
 
-                if (trackedObjects[i].state > TrackedState.NEW_DISPLAYED && trackedObjects[i].state < TrackedState.NEW_HIDED)
+                if (_trackedObjects[i].state > TrackedState.NEW_DISPLAYED && _trackedObjects[i].state < TrackedState.NEW_HIDED)
                     result.Add(r);
 
                 //LOGD("DetectionBasedTracker::process: found a object with SIZE %d x %d, rect={%d, %d, %d x %d}", r.width, r.height, r.x, r.y, r.width, r.height);
@@ -117,20 +117,20 @@ namespace OpenCVForUnity.RectangleTrack
         {
             result.Clear();
 
-            int count = trackedObjects.Count;
+            int count = _trackedObjects.Count;
             for (int i = 0; i < count; i++)
             {
                 Rect r;
                 if (smoothing)
                 {
-                    r = getSmoothingRect(i);
+                    r = GetSmoothingRect(i);
                 }
                 else
                 {
-                    r = trackedObjects[i].position;
+                    r = _trackedObjects[i].position;
                 }
 
-                result.Add(new TrackedRect(trackedObjects[i].id, r, trackedObjects[i].state, trackedObjects[i].numDetectedFrames, trackedObjects[i].numFramesNotDetected));
+                result.Add(new TrackedRect(_trackedObjects[i].id, r, _trackedObjects[i].state, _trackedObjects[i].numDetectedFrames, _trackedObjects[i].numFramesNotDetected));
 
                 //LOGD("DetectionBasedTracker::process: found a object with SIZE %d x %d, rect={%d, %d, %d x %d}", r.width, r.height, r.x, r.y, r.width, r.height);
                 //Debug.Log("GetObjects" + r.width + " " + r.height + " " + r.x + " " + r.y + " " + r.width + " " + r.height + " " + trackedObjects[i].state + " " + trackedObjects[i].numDetectedFrames + " " + trackedObjects[i].numFramesNotDetected);
@@ -144,12 +144,12 @@ namespace OpenCVForUnity.RectangleTrack
 
             Rect[] correctionRects = CreateCorrectionBySpeedOfRects();
 
-            int N1 = (int)trackedObjects.Count;
+            int N1 = (int)_trackedObjects.Count;
             int N2 = (int)detectedObjects.Count;
 
             for (int i = 0; i < N1; i++)
             {
-                trackedObjects[i].numDetectedFrames++;
+                _trackedObjects[i].numDetectedFrames++;
             }
 
             int[] correspondence = Enumerable.Repeat<int>((int)TrackedRectState.NEW_RECTANGLE, N2).ToArray();
@@ -157,7 +157,7 @@ namespace OpenCVForUnity.RectangleTrack
 
             for (int i = 0; i < N1; i++)
             {
-                TrackedObject curObject = trackedObjects[i];
+                TrackedObject curObject = _trackedObjects[i];
 
                 int bestIndex = -1;
                 int bestArea = -1;
@@ -183,7 +183,7 @@ namespace OpenCVForUnity.RectangleTrack
                         continue;
                     }
 
-                    if (IsCollideByRectangle(prevRect, detectedObjects[j], trackerParameters.coeffRectangleOverlap))
+                    if (IsCollideByRectangle(prevRect, detectedObjects[j], _trackerParameters.coeffRectangleOverlap))
                     {
                         Rect r = Intersect(prevRect, detectedObjects[j]);
                         if ((r.width > 0) && (r.height > 0))
@@ -216,7 +216,7 @@ namespace OpenCVForUnity.RectangleTrack
                         if (correspondence[j] >= 0)
                             continue;
 
-                        if (IsCollideByRectangle(detectedObjects[j], bestRect, trackerParameters.coeffRectangleOverlap))
+                        if (IsCollideByRectangle(detectedObjects[j], bestRect, _trackerParameters.coeffRectangleOverlap))
                         {
                             Rect r = Intersect(detectedObjects[j], bestRect);
 
@@ -244,19 +244,19 @@ namespace OpenCVForUnity.RectangleTrack
                 {//add position
                     //Debug.Log("DetectionBasedTracker::updateTrackedObjects: add position");
 
-                    trackedObjects[i].lastPositions.Add(detectedObjects[j]);
-                    while ((int)trackedObjects[i].lastPositions.Count > (int)trackerParameters.numLastPositionsToTrack)
+                    _trackedObjects[i].lastPositions.Add(detectedObjects[j]);
+                    while ((int)_trackedObjects[i].lastPositions.Count > (int)_trackerParameters.numLastPositionsToTrack)
                     {
-                        trackedObjects[i].lastPositions.Remove(trackedObjects[i].lastPositions[0]);
+                        _trackedObjects[i].lastPositions.Remove(_trackedObjects[i].lastPositions[0]);
                     }
-                    trackedObjects[i].numFramesNotDetected = 0;
-                    if (trackedObjects[i].state != TrackedState.DELETED) trackedObjects[i].state = TrackedState.DISPLAYED;
+                    _trackedObjects[i].numFramesNotDetected = 0;
+                    if (_trackedObjects[i].state != TrackedState.DELETED) _trackedObjects[i].state = TrackedState.DISPLAYED;
                 }
                 else if (i == (int)TrackedRectState.NEW_RECTANGLE)
                 { //new object
                     //Debug.Log("DetectionBasedTracker::updateTrackedObjects: new object");
 
-                    trackedObjects.Add(new TrackedObject(detectedObjects[j]));
+                    _trackedObjects.Add(new TrackedObject(detectedObjects[j]));
                 }
                 else
                 {
@@ -267,19 +267,19 @@ namespace OpenCVForUnity.RectangleTrack
 
             int t = 0;
             TrackedObject it;
-            while (t < trackedObjects.Count)
+            while (t < _trackedObjects.Count)
             {
-                it = trackedObjects[t];
+                it = _trackedObjects[t];
 
                 if (it.state == TrackedState.DELETED)
                 {
-                    trackedObjects.Remove(it);
+                    _trackedObjects.Remove(it);
                 }
-                else if ((it.numFramesNotDetected > trackerParameters.maxTrackLifetime)//ALL
+                else if ((it.numFramesNotDetected > _trackerParameters.maxTrackLifetime)//ALL
                 ||
-                    ((it.numDetectedFrames <= trackerParameters.numStepsToWaitBeforeFirstShow)
+                    ((it.numDetectedFrames <= _trackerParameters.numStepsToWaitBeforeFirstShow)
                     &&
-                    (it.numFramesNotDetected > trackerParameters.numStepsToTrackWithoutDetectingIfObjectHasNotBeenShown))
+                    (it.numFramesNotDetected > _trackerParameters.numStepsToTrackWithoutDetectingIfObjectHasNotBeenShown))
                 )
                 {
                     it.state = TrackedState.DELETED;
@@ -288,20 +288,20 @@ namespace OpenCVForUnity.RectangleTrack
                 else if (it.state >= TrackedState.DISPLAYED)//DISPLAYED, NEW_DISPLAYED, HIDED
                 {
 
-                    if (it.numDetectedFrames < trackerParameters.numStepsToWaitBeforeFirstShow)
+                    if (it.numDetectedFrames < _trackerParameters.numStepsToWaitBeforeFirstShow)
                     {
                         it.state = TrackedState.PENDING;
                     }
-                    else if (it.numDetectedFrames == trackerParameters.numStepsToWaitBeforeFirstShow)
+                    else if (it.numDetectedFrames == _trackerParameters.numStepsToWaitBeforeFirstShow)
                     {
                         //i, trackedObjects[i].numDetectedFrames, innerParameters.numStepsToWaitBeforeFirstShow);
                         it.state = TrackedState.NEW_DISPLAYED;
                     }
-                    else if (it.numFramesNotDetected == trackerParameters.numStepsToShowWithoutDetecting)
+                    else if (it.numFramesNotDetected == _trackerParameters.numStepsToShowWithoutDetecting)
                     {
                         it.state = TrackedState.NEW_HIDED;
                     }
-                    else if (it.numFramesNotDetected > trackerParameters.numStepsToShowWithoutDetecting)
+                    else if (it.numFramesNotDetected > _trackerParameters.numStepsToShowWithoutDetecting)
                     {
                         it.state = TrackedState.HIDED;
                     }
@@ -318,15 +318,15 @@ namespace OpenCVForUnity.RectangleTrack
         public Rect[] CreateCorrectionBySpeedOfRects()
         {
             //Debug.Log("DetectionBasedTracker::process: get _rectsWhereRegions from previous positions");
-            Rect[] rectsWhereRegions = new Rect[trackedObjects.Count];
+            Rect[] rectsWhereRegions = new Rect[_trackedObjects.Count];
 
-            int count = trackedObjects.Count;
+            int count = _trackedObjects.Count;
             for (int i = 0; i < count; i++)
             {
-                int n = trackedObjects[i].lastPositions.Count;
+                int n = _trackedObjects[i].lastPositions.Count;
                 //if (n > 0) UnityEngine.Debug.LogError("n > 0 is false");
 
-                Rect r = trackedObjects[i].lastPositions[n - 1].clone();
+                Rect r = _trackedObjects[i].lastPositions[n - 1].clone();
                 /*
                                 if (r.area() == 0)
                                 {
@@ -338,10 +338,10 @@ namespace OpenCVForUnity.RectangleTrack
                 //correction by speed of rectangle
                 if (n > 1)
                 {
-                    Point center = centerRect(r);
-                    Point center_prev = centerRect(trackedObjects[i].lastPositions[n - 2]);
-                    Point shift = new Point((center.x - center_prev.x) * trackerParameters.coeffObjectSpeedUsingInPrediction,
-                        (center.y - center_prev.y) * trackerParameters.coeffObjectSpeedUsingInPrediction);
+                    Point center = CenterRect(r);
+                    Point center_prev = CenterRect(_trackedObjects[i].lastPositions[n - 2]);
+                    Point shift = new Point((center.x - center_prev.x) * _trackerParameters.coeffObjectSpeedUsingInPrediction,
+                        (center.y - center_prev.y) * _trackerParameters.coeffObjectSpeedUsingInPrediction);
 
                     r.x += (int)Math.Round(shift.x);
                     r.y += (int)Math.Round(shift.y);
@@ -353,19 +353,19 @@ namespace OpenCVForUnity.RectangleTrack
             return rectsWhereRegions;
         }
 
-        private Point centerRect(Rect r)
+        private Point CenterRect(Rect r)
         {
             return new Point(r.x + (r.width / 2), r.y + (r.height / 2));
         }
 
-        private Rect getSmoothingRect(int i)
+        private Rect GetSmoothingRect(int i)
         {
             //Debug.Log("trackedObjects[i].numFramesNotDetected: " + trackedObjects[i].numFramesNotDetected);
 
             List<float> weightsSizesSmoothing = _weightsSizesSmoothing;
             List<float> weightsPositionsSmoothing = _weightsPositionsSmoothing;
 
-            List<Rect> lastPositions = trackedObjects[i].lastPositions;
+            List<Rect> lastPositions = _trackedObjects[i].lastPositions;
 
             int N = lastPositions.Count;
             if (N <= 0)
@@ -443,7 +443,7 @@ namespace OpenCVForUnity.RectangleTrack
 
         public void Reset()
         {
-            trackedObjects.Clear();
+            _trackedObjects.Clear();
         }
 
         private Rect Intersect(Rect a, Rect b)

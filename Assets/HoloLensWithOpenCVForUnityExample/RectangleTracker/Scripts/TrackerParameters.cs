@@ -1,6 +1,5 @@
 ﻿namespace OpenCVForUnity.RectangleTrack
 {
-
     public class TrackerParameters
     {
         public int numLastPositionsToTrack = 4;

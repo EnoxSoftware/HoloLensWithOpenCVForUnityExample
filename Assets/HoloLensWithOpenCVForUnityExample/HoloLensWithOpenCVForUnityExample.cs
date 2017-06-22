@@ -9,7 +9,6 @@ namespace HoloLensWithOpenCVForUnityExample
 {
     public class HoloLensWithOpenCVForUnityExample : MonoBehaviour
     {
-        
         // Use this for initialization
         void Start ()
         {
@@ -22,7 +21,7 @@ namespace HoloLensWithOpenCVForUnityExample
             
         }
 
-        public void OnShowLicenseButton ()
+        public void OnShowLicenseButtonClick ()
         {
             #if UNITY_5_3 || UNITY_5_3_OR_NEWER
             SceneManager.LoadScene ("ShowLicense");
@@ -31,7 +30,7 @@ namespace HoloLensWithOpenCVForUnityExample
             #endif
         }
 
-        public void OnHoloLensPhotoCaptureExample ()
+        public void OnHoloLensPhotoCaptureExampleButtonClick ()
         {
             #if UNITY_5_3 || UNITY_5_3_OR_NEWER
             SceneManager.LoadScene ("HoloLensPhotoCaptureExample");
@@ -40,7 +39,7 @@ namespace HoloLensWithOpenCVForUnityExample
             #endif
         }
 
-        public void OnHoloLensComicFilterExample ()
+        public void OnHoloLensComicFilterExampleButtonClick ()
         {
             #if UNITY_5_3 || UNITY_5_3_OR_NEWER
             SceneManager.LoadScene ("HoloLensComicFilterExample");
@@ -49,7 +48,7 @@ namespace HoloLensWithOpenCVForUnityExample
             #endif
         }
         
-        public void OnHoloLensFaceDetectionExample ()
+        public void OnHoloLensFaceDetectionExampleButtonClick ()
         {
             #if UNITY_5_3 || UNITY_5_3_OR_NEWER
             SceneManager.LoadScene ("HoloLensFaceDetectionExample");
@@ -58,7 +57,7 @@ namespace HoloLensWithOpenCVForUnityExample
             #endif
         }
 
-        public void OnHoloLensFaceDetectionOverlayExample ()
+        public void OnHoloLensFaceDetectionOverlayExampleButtonClick ()
         {
             #if UNITY_5_3 || UNITY_5_3_OR_NEWER
             SceneManager.LoadScene ("HoloLensFaceDetectionOverlayExample");
@@ -67,7 +66,7 @@ namespace HoloLensWithOpenCVForUnityExample
             #endif
         }
 
-        public void OnHoloLensArUcoExample ()
+        public void OnHoloLensArUcoExampleButtonClick ()
         {
             #if UNITY_5_3 || UNITY_5_3_OR_NEWER
             SceneManager.LoadScene ("HoloLensArUcoExample");
