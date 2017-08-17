@@ -15,8 +15,9 @@ using Rect = OpenCVForUnity.Rect;
 namespace HoloLensWithOpenCVForUnityExample
 {
     /// <summary>
-    /// HoloLens face detection overlay example. (Overlay display of face area rectangles)
-    /// This cord referred to https://github.com/Itseez/opencv/blob/master/modules/objdetect/src/detection_based_tracker.cpp.
+    /// HoloLens face detection overlay example.
+    /// An example of overlay display of face area rectangles using OpenCVForUnity on Hololens.
+    /// Referring to https://github.com/Itseez/opencv/blob/master/modules/objdetect/src/detection_based_tracker.cpp.
     /// </summary>
     [RequireComponent(typeof(OptimizationWebCamTextureToMatHelper))]
     public class HoloLensFaceDetectionOverlayExample : MonoBehaviour
@@ -408,9 +409,9 @@ namespace HoloLensWithOpenCVForUnityExample
         }
 
         /// <summary>
-        /// Raises the disable event.
+        /// Raises the destroy event.
         /// </summary>
-        void OnDisable ()
+        void OnDestroy ()
         {
             webCamTextureToMatHelper.Dispose ();
 

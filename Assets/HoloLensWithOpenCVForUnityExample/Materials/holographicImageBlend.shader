@@ -2,7 +2,7 @@
 
 Shader "AR/HolographicImageBlend"
 {
-    // referring to the https://forum.unity3d.com/threads/holographic-photo-blending-with-photocapture.416023/.
+    // Referring to https://forum.unity3d.com/threads/holographic-photo-blending-with-photocapture.416023/.
 
     Properties
     {

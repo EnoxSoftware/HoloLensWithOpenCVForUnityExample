@@ -10,8 +10,9 @@ using OpenCVForUnity;
 namespace HoloLensWithOpenCVForUnityExample
 {
     /// <summary>
-    /// HoloLens ComicFilter example. (Example of the comic filter using the OpenCVForUnity on Hololens)
-    /// referring to the http://dev.classmethod.jp/smartphone/opencv-manga-2/.
+    /// HoloLens ComicFilter example.
+    /// An example of image processing (comic filter) using OpenCVForUnity on Hololens.
+    /// Referring to http://dev.classmethod.jp/smartphone/opencv-manga-2/.
     /// </summary>
     [RequireComponent(typeof(OptimizationWebCamTextureToMatHelper))]
     public class HoloLensComicFilterExample : MonoBehaviour
@@ -277,9 +278,9 @@ namespace HoloLensWithOpenCVForUnityExample
         }
 
         /// <summary>
-        /// Raises the disable event.
+        /// Raises the destroy event.
         /// </summary>
-        void OnDisable ()
+        void OnDestroy ()
         {
             webCamTextureToMatHelper.Dispose ();
         }

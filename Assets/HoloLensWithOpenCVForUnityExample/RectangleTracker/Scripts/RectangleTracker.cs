@@ -7,7 +7,7 @@ namespace OpenCVForUnity.RectangleTrack
 {
     /// <summary>
     /// Rectangle tracker.
-    /// This cord referred to https://github.com/Itseez/opencv/blob/master/modules/objdetect/src/detection_based_tracker.cpp.
+    /// Referring to https://github.com/Itseez/opencv/blob/master/modules/objdetect/src/detection_based_tracker.cpp.
     /// v 1.0.1
     /// </summary>
     public class RectangleTracker : IDisposable

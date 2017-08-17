@@ -35,11 +35,11 @@ namespace HoloLensWithOpenCVForUnityExample
                 return targetHeight;
             }
         }
-
-        protected Transform overlayTransform;
+            
         protected Transform targetTransform;
         protected float targetWidth = 0;
         protected float targetHeight = 0;
+        protected Transform overlayTransform;
         protected ObjectPool objectPool;
 
         void Awake()
@@ -110,10 +110,10 @@ namespace HoloLensWithOpenCVForUnityExample
                 this.targetTransform = null;
                 return;
             }
-
-            this.targetTransform = targetTransform;
+                
             targetWidth = targetTransform.localScale.x;
             targetHeight = targetTransform.localScale.y;
+            this.targetTransform = targetTransform;
             overlayTransform.localPosition = targetTransform.localPosition;
             overlayTransform.localRotation = targetTransform.localRotation;
             overlayTransform.localScale = targetTransform.localScale;

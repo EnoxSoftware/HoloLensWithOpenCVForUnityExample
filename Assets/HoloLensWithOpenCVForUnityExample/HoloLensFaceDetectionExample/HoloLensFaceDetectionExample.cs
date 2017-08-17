@@ -15,8 +15,9 @@ using Rect = OpenCVForUnity.Rect;
 namespace HoloLensWithOpenCVForUnityExample
 {
     /// <summary>
-    /// HoloLens face detection example. (Example of face detection using the OpenCVForUnity on Hololens)
-    /// This cord referred to https://github.com/Itseez/opencv/blob/master/modules/objdetect/src/detection_based_tracker.cpp.
+    /// HoloLens face detection example.
+    /// An example of detecting face using OpenCVForUnity on Hololens.
+    /// Referring to https://github.com/Itseez/opencv/blob/master/modules/objdetect/src/detection_based_tracker.cpp.
     /// </summary>
     [RequireComponent(typeof(OptimizationWebCamTextureToMatHelper))]
     public class HoloLensFaceDetectionExample : MonoBehaviour
@@ -408,11 +409,11 @@ namespace HoloLensWithOpenCVForUnityExample
                 detectedObjectsInRegions.Add (curres);
             }
         }
-
+            
         /// <summary>
-        /// Raises the disable event.
+        /// Raises the destroy event.
         /// </summary>
-        void OnDisable ()
+        void OnDestroy ()
         {
             webCamTextureToMatHelper.Dispose ();
 

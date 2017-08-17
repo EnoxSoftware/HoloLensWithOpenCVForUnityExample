@@ -14,8 +14,9 @@ using OpenCVForUnity;
 namespace HoloLensWithOpenCVForUnityExample
 {
     /// <summary>
-    /// HoloLens ArUco example. (Example of marker based AR using the OpenCVForUnity on Hololens)
-    /// https://github.com/opencv/opencv_contrib/blob/master/modules/aruco/samples/detect_markers.cpp
+    /// HoloLens ArUco example.
+    /// An example of marker based AR using OpenCVForUnity on Hololens.
+    /// Referring to https://github.com/opencv/opencv_contrib/blob/master/modules/aruco/samples/detect_markers.cpp.
     /// </summary>
     [RequireComponent(typeof(WebCamTextureToMatHelper))]
     public class HoloLensArUcoExample : MonoBehaviour
@@ -159,9 +160,10 @@ namespace HoloLensWithOpenCVForUnityExample
         Mat rgbMat4preview;
         Texture2D texture;
 
-        // Camera matrix value of Hololens camera 896x504 size. 
-        // These values ​​are unique to my device, obtained from "Windows.Media.Devices.Core.CameraIntrinsics" class. (https://docs.microsoft.com/en-us/uwp/api/windows.media.devices.core.cameraintrinsics)
-        // (can adjust the position of the AR hologram with the values ​​of cx and cy. see http://docs.opencv.org/2.4/modules/calib3d/doc/camera_calibration_and_3d_reconstruction.html)
+        // The camera matrix value of Hololens camera 896x504 size.
+        // For details on the camera matrix, please refer to this page. (http://docs.opencv.org/2.4/modules/calib3d/doc/camera_calibration_and_3d_reconstruction.html)
+        // These values ​​are unique to my device, obtained from the "Windows.Media.Devices.Core.CameraIntrinsics" class. (https://docs.microsoft.com/en-us/uwp/api/windows.media.devices.core.cameraintrinsics)
+        // Can get these values by using this helper script. (https://github.com/EnoxSoftware/HoloLensWithOpenCVForUnityExample/tree/master/Assets/HololensCameraIntrinsicsChecker/CameraIntrinsicsCheckerHelper)
         double fx = 1035.149;//focal length x.
         double fy = 1034.633;//focal length y.
         double cx = 404.9134;//principal point x.
@@ -473,11 +475,11 @@ namespace HoloLensWithOpenCVForUnityExample
 
             isDetecting = false;
         }
-
+            
         /// <summary>
-        /// Raises the disable event.
+        /// Raises the destroy event.
         /// </summary>
-        void OnDisable ()
+        void OnDestroy ()
         {
             webCamTextureToMatHelper.Dispose ();
         }
