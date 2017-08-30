@@ -15,7 +15,7 @@ using Rect = OpenCVForUnity.Rect;
 namespace HoloLensWithOpenCVForUnityExample
 {
     /// <summary>
-    /// HoloLens face detection example.
+    /// HoloLens Face Detection Example
     /// An example of detecting face using OpenCVForUnity on Hololens.
     /// Referring to https://github.com/Itseez/opencv/blob/master/modules/objdetect/src/detection_based_tracker.cpp.
     /// </summary>

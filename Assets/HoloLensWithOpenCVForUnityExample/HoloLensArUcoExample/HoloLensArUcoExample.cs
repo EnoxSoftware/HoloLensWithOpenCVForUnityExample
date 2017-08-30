@@ -14,7 +14,7 @@ using OpenCVForUnity;
 namespace HoloLensWithOpenCVForUnityExample
 {
     /// <summary>
-    /// HoloLens ArUco example.
+    /// HoloLens ArUco Example
     /// An example of marker based AR using OpenCVForUnity on Hololens.
     /// Referring to https://github.com/opencv/opencv_contrib/blob/master/modules/aruco/samples/detect_markers.cpp.
     /// </summary>
@@ -406,7 +406,7 @@ namespace HoloLensWithOpenCVForUnityExample
             Imgproc.cvtColor (downScaleRgbaMat, grayMat, Imgproc.COLOR_RGBA2GRAY);
 
             // Detect markers and estimate Pose
-            Aruco.detectMarkers (grayMat, dictionary, corners, ids, detectorParams, rejected);
+            Aruco.detectMarkers (grayMat, dictionary, corners, ids, detectorParams, rejected, camMatrix, distCoeffs);
 
             if (applyEstimationPose && ids.total () > 0){
                 Aruco.estimatePoseSingleMarkers (corners, markerLength, camMatrix, distCoeffs, rvecs, tvecs);

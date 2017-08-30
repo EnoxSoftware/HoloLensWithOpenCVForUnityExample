@@ -13,7 +13,7 @@ using OpenCVForUnity;
 namespace HoloLensWithOpenCVForUnityExample
 {
     /// <summary>
-    /// HoloLens photo capture example.
+    /// HoloLens PhotoCapture Example
     /// An example of holographic photo blending using the PhotocCapture class on Hololens.
     /// Referring to https://forum.unity3d.com/threads/holographic-photo-blending-with-photocapture.416023/.
     /// </summary>

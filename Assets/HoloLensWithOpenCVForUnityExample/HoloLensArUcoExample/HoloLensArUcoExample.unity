@@ -172,7 +172,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 0
+  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 50.000004, y: -30, z: 0}
 --- !u!1001 &110278492
 Prefab:
@@ -848,7 +848,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: DisplayCamreaPreview
+  m_Text: Display Camrea Preview
 --- !u!222 &677858458
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2163,7 +2163,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: ChangeCamera
+  m_Text: Change Camera
 --- !u!222 &1620370071
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2373,7 +2373,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 1
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1709852086
 MonoBehaviour:

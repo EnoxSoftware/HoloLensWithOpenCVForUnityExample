@@ -10,7 +10,7 @@ using OpenCVForUnity;
 namespace HoloLensWithOpenCVForUnityExample
 {
     /// <summary>
-    /// HoloLens ComicFilter example.
+    /// HoloLens Comic Filter Example
     /// An example of image processing (comic filter) using OpenCVForUnity on Hololens.
     /// Referring to http://dev.classmethod.jp/smartphone/opencv-manga-2/.
     /// </summary>
