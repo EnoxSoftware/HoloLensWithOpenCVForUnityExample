@@ -6,14 +6,17 @@
  * (need to enable "Unity C # Projects" of the build setting  in Unity Editor)
  * See https://forums.hololens.com/discussion/7032/using-net-4-6-features-not-supported-by-unity-wsa-build.
  * 
- * In order to make this script work, it is necessary to uncomment from line 66 to line 71.
+ * In order to make this script work, it is necessary to uncomment from line 73 to line 90.
 */
-#if NETFX_CORE
 
 using UnityEngine;
 
 using System;
 using System.Linq;
+using System.Collections.Generic;
+using UnityEngine.UI;
+
+#if NETFX_CORE
 using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
 using Windows.Foundation;
@@ -21,11 +24,15 @@ using Windows.Media.Capture;
 using Windows.Media.Capture.Frames;
 using Windows.Media.MediaProperties;
 using Windows.Media.Devices.Core;
+#endif
 
 namespace HololensCameraIntrinsics
 {
     public class CameraIntrinsicsCheckerHelper : MonoBehaviour
     {
+        public Text ResultText;
+
+        #if NETFX_CORE
         CameraIntrinsicsChecker cameraIntrinsicsChecker;
 
         // Use this for initialization
@@ -53,7 +60,7 @@ namespace HololensCameraIntrinsics
             checker.GetCameraIntrinsicsAync (OnCameraIntrinsicsGot);
         }
 
-        private void OnCameraIntrinsicsGot(CameraIntrinsics cameraIntrinsics)
+        private void OnCameraIntrinsicsGot(CameraIntrinsics cameraIntrinsics, VideoEncodingProperties property)
         {
             if (cameraIntrinsics == null)
             {
@@ -63,22 +70,36 @@ namespace HololensCameraIntrinsics
 
             //When building the application for Hololens, uncomment the following line in Visual Studio.
             /*
-            Debug.Log ("FocalLength: " + cameraIntrinsics.FocalLength);
-            Debug.Log("ImageHeight: " + cameraIntrinsics.ImageHeight);
-            Debug.Log("ImageWidth: " + cameraIntrinsics.ImageWidth);
-            Debug.Log("PrincipalPoint: " + cameraIntrinsics.PrincipalPoint);
-            Debug.Log("RadialDistortion: " + cameraIntrinsics.RadialDistortion);
-            Debug.Log("TangentialDistortion: " + cameraIntrinsics.TangentialDistortion);
+            double calculatedFrameRate = (double)property.FrameRate.Numerator / (double)property.FrameRate.Denominator;
+
+            String result = "\n" + "=============================================";
+            result += "\n" + "==== Size: " + property.Width + "x" + property.Height + " FrameRate: " + (int)Math.Round(calculatedFrameRate) + "====";
+            result += "\n" + "FocalLength: " + cameraIntrinsics.FocalLength;
+            result += "\n" + "ImageHeight: " + cameraIntrinsics.ImageHeight;
+            result += "\n" + "ImageWidth: " + cameraIntrinsics.ImageWidth;
+            result += "\n" + "PrincipalPoint: " + cameraIntrinsics.PrincipalPoint;
+            result += "\n" + "RadialDistortion: " + cameraIntrinsics.RadialDistortion;
+            result += "\n" + "TangentialDistortion: " + cameraIntrinsics.TangentialDistortion;
+            result += "\n" + "=============================================";
+
+            Debug.Log(result);
+
+            UnityEngine.WSA.Application.InvokeOnAppThread(() =>
+            {
+                ResultText.text += result;
+            }, false);
             */
+
         }
+        #endif
     }
 
-
+    #if NETFX_CORE
     public class CameraIntrinsicsChecker
     {
         public delegate void OnVideoCaptureResourceCreatedCallback(CameraIntrinsicsChecker chakerObject);
 
-        public delegate void OnCameraIntrinsicsGotCallback(CameraIntrinsics cameraIntrinsics);
+        public delegate void OnCameraIntrinsicsGotCallback(CameraIntrinsics cameraIntrinsics, VideoEncodingProperties property);
 
         public bool IsStreaming
         {
@@ -146,70 +167,59 @@ namespace HololensCameraIntrinsics
 
             if (mediaFrameSource == null)
             {
-                onGotCallback?.Invoke(null);
+                onGotCallback?.Invoke(null, null);
                 return;
             }
 
             var pixelFormat = MediaEncodingSubtypes.Bgra8;
             _frameReader = await _mediaCapture.CreateFrameReaderAsync(mediaFrameSource, pixelFormat);
+
             await _frameReader.StartAsync();
-            VideoEncodingProperties properties = _mediaCapture.VideoDeviceController.GetAvailableMediaStreamProperties(STREAM_TYPE).Select((x) => x as VideoEncodingProperties)
-                .Where((x) =>
-                    {
-                        if (x == null) return false;
-                        if (x.FrameRate.Denominator == 0) return false;
 
-                        double calculatedFrameRate = (double)x.FrameRate.Numerator / (double)x.FrameRate.Denominator;
+            IEnumerable<VideoEncodingProperties> allProperties = _mediaCapture.VideoDeviceController.GetAvailableMediaStreamProperties(STREAM_TYPE).Select(x => x as VideoEncodingProperties);
 
-                        return
-                            x.Width == 896 &&
-                            x.Height == 504 &&
-                            (int)Math.Round(calculatedFrameRate) == 30;
-                    }).FirstOrDefault(); //Returns IEnumerable<VideoEncodingProperties>
-
-            await _mediaCapture.VideoDeviceController.SetMediaStreamPropertiesAsync(STREAM_TYPE, properties);
-
-
-            // Get CameraIntrinsics
-            var taskCompletionSource = new TaskCompletionSource<bool>();
-
-            TypedEventHandler<MediaFrameReader, MediaFrameArrivedEventArgs> handler = null;
-            handler = (MediaFrameReader sender, MediaFrameArrivedEventArgs args) =>
+            foreach (var property in allProperties)
             {
-                using (var frameReference = _frameReader.TryAcquireLatestFrame()) //frame: MediaFrameReference
+                await _mediaCapture.VideoDeviceController.SetMediaStreamPropertiesAsync(STREAM_TYPE, property);
+                
+                // Get CameraIntrinsics
+                var taskCompletionSource = new TaskCompletionSource<bool>();
+
+                TypedEventHandler<MediaFrameReader, MediaFrameArrivedEventArgs> handler = null;
+                handler = (MediaFrameReader sender, MediaFrameArrivedEventArgs args) =>
                 {
-                    if (frameReference != null)
+                    using (var frameReference = _frameReader.TryAcquireLatestFrame()) //frame: MediaFrameReference
                     {
-                        cameraIntrinsics = frameReference.VideoMediaFrame.CameraIntrinsics;
+                        if (frameReference != null)
+                        {
+                            cameraIntrinsics = frameReference.VideoMediaFrame.CameraIntrinsics;
 
-                        taskCompletionSource.SetResult(true);
+                            taskCompletionSource.SetResult(true);
+                        }
+                        else
+                        {
+                            taskCompletionSource.SetResult(false);
+                        }
                     }
-                    else
-                    {
-                        taskCompletionSource.SetResult(false);
-                    }
+                    _frameReader.FrameArrived -= handler;
+                };
+                _frameReader.FrameArrived += handler;
+
+                var result = await taskCompletionSource.Task;
+
+                if (result == false)
+                {
+                    onGotCallback?.Invoke(null, null);
+                    return;
                 }
-                _frameReader.FrameArrived -= handler;
-            };
-            _frameReader.FrameArrived += handler;
 
-            var result = await taskCompletionSource.Task;
-
-            if (result == false)
-            {
-                onGotCallback?.Invoke(null);
-                return;
+                onGotCallback?.Invoke(cameraIntrinsics, property);
             }
-
-
 
             // Stop video
             await _frameReader.StopAsync();
             _frameReader.Dispose();
             _frameReader = null;
-
-
-            onGotCallback?.Invoke(cameraIntrinsics);
         }
 
         public void Dispose()
@@ -246,21 +256,5 @@ namespace HololensCameraIntrinsics
                 sourceInfo.SourceKind == MediaFrameSourceKind.Color);
         }
     }
-
+    #endif
 }
-
-#else
-
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-namespace HololensCameraIntrinsics
-{
-    public class CameraIntrinsicsCheckerHelper : MonoBehaviour
-    {
-
-    }
-}
-
-#endif
