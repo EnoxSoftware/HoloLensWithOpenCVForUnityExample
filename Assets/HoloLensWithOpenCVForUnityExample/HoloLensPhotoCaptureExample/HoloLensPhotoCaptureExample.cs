@@ -14,7 +14,7 @@ namespace HoloLensWithOpenCVForUnityExample
 {
     /// <summary>
     /// HoloLens PhotoCapture Example
-    /// An example of holographic photo blending using the PhotocCapture class on Hololens.
+    /// An example of holographic photo blending using the PhotocCapture class on Hololens. (Air Tap to take a picture)
     /// Referring to https://forum.unity3d.com/threads/holographic-photo-blending-with-photocapture.416023/.
     /// </summary>
     public class HoloLensPhotoCaptureExample:MonoBehaviour
@@ -151,11 +151,11 @@ namespace HoloLensWithOpenCVForUnityExample
             Imgproc.equalizeHist (grayMat, grayMat);
 
             // fill all black.
-//            Imgproc.rectangle (rgbaMat, new Point (0, 0), new Point (rgbaMat.width (), rgbaMat.height ()), new Scalar (0, 0, 0, 0), -1);
+            //Imgproc.rectangle (rgbaMat, new Point (0, 0), new Point (rgbaMat.width (), rgbaMat.height ()), new Scalar (0, 0, 0, 0), -1);
             // draw an edge lines.
             Imgproc.rectangle (rgbaMat, new Point (0, 0), new Point (rgbaMat.width (), rgbaMat.height ()), new Scalar (255, 0, 0, 255), 2);
             // draw a diagonal line.
-//            Imgproc.line (rgbaMat, new Point (0, 0), new Point (rgbaMat.cols (), rgbaMat.rows ()), new Scalar (255, 0, 0, 255));
+            //Imgproc.line (rgbaMat, new Point (0, 0), new Point (rgbaMat.cols (), rgbaMat.rows ()), new Scalar (255, 0, 0, 255));
 
             if (cascade != null)
                 cascade.detectMultiScale (grayMat, faces, 1.1, 2, 2, // TODO: objdetect.CV_HAAR_SCALE_IMAGE
@@ -163,7 +163,7 @@ namespace HoloLensWithOpenCVForUnityExample
 
             OpenCVForUnity.Rect[] rects = faces.toArray ();
             for (int i = 0; i < rects.Length; i++) {
-//                          Debug.Log ("detect faces " + rects [i]);
+                //Debug.Log ("detect faces " + rects [i]);
                 Imgproc.rectangle (rgbaMat, new Point (rects [i].x, rects [i].y), new Point (rects [i].x + rects [i].width, rects [i].y + rects [i].height), new Scalar (255, 0, 0, 255), 2);
             }
 

@@ -3,54 +3,104 @@ using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.Serialization;
 
 namespace HoloLensWithOpenCVForUnityExample
 {
     /// <summary>
     /// Webcam texture to mat helper.
-    /// v 1.0.2
+    /// v 1.0.5
     /// </summary>
     public class WebCamTextureToMatHelper : MonoBehaviour
     {
         /// <summary>
-        /// Set this to specify the name of the device to use.
+        /// Set the name of the device to use.
         /// </summary>
-        public string requestedDeviceName = null;
+        [SerializeField, FormerlySerializedAs("requestedDeviceName"), TooltipAttribute ("Set the name of the device to use.")]
+        protected string _requestedDeviceName = null;
+        public string requestedDeviceName {
+            get { return _requestedDeviceName; } 
+            set { _requestedDeviceName = value; }
+        }
 
         /// <summary>
-        /// Set the requested width of the camera device.
+        /// Set the width of WebCamTexture.
         /// </summary>
-        public int requestedWidth = 640;
+        [SerializeField, FormerlySerializedAs("requestedWidth"), TooltipAttribute ("Set the width of WebCamTexture.")]
+        protected int _requestedWidth = 640;
+        public int requestedWidth {
+            get { return _requestedWidth; } 
+            set { _requestedWidth = (int)Mathf.Clamp(value, 0f, float.MaxValue); }
+        }
 
         /// <summary>
-        /// Set the requested height of the camera device.
+        /// Set the height of WebCamTexture.
         /// </summary>
-        public int requestedHeight = 480;
+        [SerializeField, FormerlySerializedAs("requestedHeight"), TooltipAttribute ("Set the height of WebCamTexture.")]
+        protected int _requestedHeight = 480;
+        public int requestedHeight {
+            get { return _requestedHeight; } 
+            set { _requestedHeight = (int)Mathf.Clamp(value, 0f, float.MaxValue); }
+        }
 
         /// <summary>
-        /// Set the requested to using the front camera.
+        /// Set whether to use the front facing camera.
         /// </summary>
-        public bool requestedIsFrontFacing = false;
+        [SerializeField, FormerlySerializedAs("requestedIsFrontFacing"), TooltipAttribute ("Set whether to use the front facing camera.")]
+        protected bool _requestedIsFrontFacing = false;
+        public bool requestedIsFrontFacing {
+            get { return _requestedIsFrontFacing; } 
+            set { _requestedIsFrontFacing = value; }
+        }
 
         /// <summary>
-        /// Set the requested frame rate of the camera device (in frames per second).
+        /// Set FPS of WebCamTexture.
         /// </summary>
-        public int requestedFPS = 30;
+        [SerializeField, FormerlySerializedAs("requestedFPS"), TooltipAttribute ("Set FPS of WebCamTexture.")]
+        protected int _requestedFPS = 30;
+        public int requestedFPS {
+            get { return _requestedFPS; } 
+            set { _requestedFPS = (int)Mathf.Clamp(value, 0f, float.MaxValue); }
+        }
+
+        /// <summary>
+        /// Sets whether to rotate WebCamTexture 90 degrees.
+        /// </summary>
+        [SerializeField, FormerlySerializedAs("requestedRotate90Degree"), TooltipAttribute ("Sets whether to rotate WebCamTexture 90 degrees.")]
+        protected bool _requestedRotate90Degree = false;
+        public bool requestedRotate90Degree {
+            get { return _requestedRotate90Degree; } 
+            set { _requestedRotate90Degree = value; }
+        }
 
         /// <summary>
         /// Determines if flips vertically.
         /// </summary>
-        public bool flipVertical = false;
+        [SerializeField, FormerlySerializedAs("flipVertical"), TooltipAttribute ("Determines if flips vertically.")]
+        protected bool _flipVertical = false;
+        public bool flipVertical {
+            get { return _flipVertical; } 
+            set { _flipVertical = value; }
+        }
 
         /// <summary>
         /// Determines if flips horizontal.
         /// </summary>
-        public bool flipHorizontal = false;
+        [SerializeField, FormerlySerializedAs("flipHorizontal"), TooltipAttribute ("Determines if flips horizontal.")]
+        protected bool _flipHorizontal = false;
+        public bool flipHorizontal {
+            get { return _flipHorizontal; } 
+            set { _flipHorizontal = value; }
+        }
 
         /// <summary>
         /// The timeout frame count.
         /// </summary>
-        public int timeoutFrameCount = 300;
+        protected int _timeoutFrameCount = 300;
+        public int timeoutFrameCount {
+            get { return _timeoutFrameCount; } 
+            set { _timeoutFrameCount = (int)Mathf.Clamp(value, 0f, float.MaxValue); }
+        }
 
         /// <summary>
         /// UnityEvent that is triggered when this instance is initialized.
@@ -78,14 +128,14 @@ namespace HoloLensWithOpenCVForUnityExample
         protected WebCamDevice webCamDevice;
 
         /// <summary>
-        /// The rgba mat.
+        /// The frame mat.
         /// </summary>
-        protected Mat rgbaMat;
+        protected Mat frameMat;
 
         /// <summary>
-        /// The rotated rgba mat
+        /// The rotated frame mat
         /// </summary>
-        protected Mat rotatedRgbaMat;
+        protected Mat rotatedFrameMat;
 
         /// <summary>
         /// The buffer colors.
@@ -103,15 +153,21 @@ namespace HoloLensWithOpenCVForUnityExample
         protected bool hasInitDone = false;
 
         /// <summary>
+        /// The initialization coroutine.
+        /// </summary>
+        protected IEnumerator initCoroutine;
+
+        /// <summary>
         /// Orientation of the screen.
         /// </summary>
-        protected ScreenOrientation screenOrientation = ScreenOrientation.Unknown;
+        protected ScreenOrientation screenOrientation;
 
         [System.Serializable]
         public enum ErrorCode :int
         {
-            CAMERA_DEVICE_NOT_EXIST = 0,
-            TIMEOUT = 1,
+            UNKNOWN = 0,
+            CAMERA_DEVICE_NOT_EXIST = 1,
+            TIMEOUT = 2,
         }
 
         [System.Serializable]
@@ -120,12 +176,21 @@ namespace HoloLensWithOpenCVForUnityExample
             
         }
 
+        protected void OnValidate()
+        {
+            _requestedWidth = (int)Mathf.Clamp(_requestedWidth, 0f, float.MaxValue);
+            _requestedHeight = (int)Mathf.Clamp(_requestedHeight, 0f, float.MaxValue);
+            _requestedFPS = (int)Mathf.Clamp(_requestedFPS, 0f, float.MaxValue);
+            _timeoutFrameCount = (int)Mathf.Clamp(_timeoutFrameCount, 0f, float.MaxValue);
+        }
+
         // Update is called once per frame
         protected virtual void Update ()
         {
             if (hasInitDone) {
                 if (screenOrientation != Screen.orientation) {
-                    StartCoroutine (_Initialize ());
+                    initCoroutine = _Initialize ();
+                    StartCoroutine (initCoroutine);
                 }
             }
         }
@@ -144,7 +209,10 @@ namespace HoloLensWithOpenCVForUnityExample
         public virtual void Initialize ()
         {
             if (isInitWaiting)
-                return;
+            {
+                CancelInitCoroutine ();
+                ReleaseResources ();
+            }
             
             if (onInitialized == null)
                 onInitialized = new UnityEvent ();
@@ -153,7 +221,8 @@ namespace HoloLensWithOpenCVForUnityExample
             if (onErrorOccurred == null)
                 onErrorOccurred = new ErrorUnityEvent ();
             
-            StartCoroutine (_Initialize ());
+            initCoroutine = _Initialize ();
+            StartCoroutine (initCoroutine);
         }
 
         /// <summary>
@@ -164,16 +233,21 @@ namespace HoloLensWithOpenCVForUnityExample
         /// <param name="requestedHeight">Requested height.</param>
         /// <param name="requestedIsFrontFacing">If set to <c>true</c> requested to using the front camera.</param>
         /// <param name="requestedFPS">Requested FPS.</param>
-        public virtual void Initialize (string deviceName, int requestedWidth, int requestedHeight, bool requestedIsFrontFacing = false, int requestedFPS = 30)
+        /// <param name="requestedRotate90Degree">If set to <c>true</c> requested to rotate WebCamTexture 90 degrees.</param>
+        public virtual void Initialize (string deviceName, int requestedWidth, int requestedHeight, bool requestedIsFrontFacing = false, int requestedFPS = 30, bool requestedRotate90Degree = false)
         {
             if (isInitWaiting)
-                return;
+            {
+                CancelInitCoroutine ();
+                ReleaseResources ();
+            }
 
-            this.requestedDeviceName = deviceName;
-            this.requestedWidth = requestedWidth;
-            this.requestedHeight = requestedHeight;
-            this.requestedIsFrontFacing = requestedIsFrontFacing;
-            this.requestedFPS = requestedFPS;
+            this._requestedDeviceName = deviceName;
+            this._requestedWidth = requestedWidth;
+            this._requestedHeight = requestedHeight;
+            this._requestedIsFrontFacing = requestedIsFrontFacing;
+            this._requestedFPS = requestedFPS;
+            this._requestedRotate90Degree = requestedRotate90Degree;
             if (onInitialized == null)
                 onInitialized = new UnityEvent ();
             if (onDisposed == null)
@@ -181,7 +255,8 @@ namespace HoloLensWithOpenCVForUnityExample
             if (onErrorOccurred == null)
                 onErrorOccurred = new ErrorUnityEvent ();
 
-            StartCoroutine (_Initialize ());
+            initCoroutine = _Initialize ();
+            StartCoroutine (initCoroutine);
         }
 
         /// <summary>
@@ -190,7 +265,12 @@ namespace HoloLensWithOpenCVForUnityExample
         protected virtual IEnumerator _Initialize ()
         {
             if (hasInitDone)
-                _Dispose ();
+            {
+                ReleaseResources ();
+
+                if (onDisposed != null)
+                    onDisposed.Invoke ();
+            }
 
             isInitWaiting = true;
 
@@ -252,25 +332,31 @@ namespace HoloLensWithOpenCVForUnityExample
                     }
                     if (isTimeout) break;
                     #endif
-                    #endif
+                #endif
 
-                    Debug.Log ("name " + webCamTexture.name + " width " + webCamTexture.width + " height " + webCamTexture.height + " fps " + webCamTexture.requestedFPS);
-                    Debug.Log ("videoRotationAngle " + webCamTexture.videoRotationAngle + " videoVerticallyMirrored " + webCamTexture.videoVerticallyMirrored + " isFrongFacing " + webCamDevice.isFrontFacing);
+                    Debug.Log ("WebCamTextureToMatHelper:: " + "name:" + webCamTexture.name + " width:" + webCamTexture.width + " height:" + webCamTexture.height + " fps:" + webCamTexture.requestedFPS
+                        + " videoRotationAngle:" + webCamTexture.videoRotationAngle + " videoVerticallyMirrored:" + webCamTexture.videoVerticallyMirrored + " isFrongFacing:" + webCamDevice.isFrontFacing);
 
                     if (colors == null || colors.Length != webCamTexture.width * webCamTexture.height)
                         colors = new Color32[webCamTexture.width * webCamTexture.height];
 
-                    rgbaMat = new Mat (webCamTexture.height, webCamTexture.width, CvType.CV_8UC4);
+                    frameMat = new Mat (webCamTexture.height, webCamTexture.width, CvType.CV_8UC4);
                     screenOrientation = Screen.orientation;
 
                     #if !UNITY_EDITOR && !(UNITY_STANDALONE || UNITY_WEBGL) 
                     if (screenOrientation == ScreenOrientation.Portrait || screenOrientation == ScreenOrientation.PortraitUpsideDown) {
-                        rotatedRgbaMat = new Mat (webCamTexture.width, webCamTexture.height, CvType.CV_8UC4);
+                        rotatedFrameMat = new Mat (webCamTexture.width, webCamTexture.height, CvType.CV_8UC4);
                     }
                     #endif
 
+                    if (requestedRotate90Degree) {
+                        if (rotatedFrameMat == null)
+                            rotatedFrameMat = new Mat (webCamTexture.width, webCamTexture.height, CvType.CV_8UC4);
+                    }
+
                     isInitWaiting = false;
                     hasInitDone = true;
+                    initCoroutine = null;
 
                     if (onInitialized != null)
                         onInitialized.Invoke ();
@@ -278,7 +364,7 @@ namespace HoloLensWithOpenCVForUnityExample
                     break;
                 } else {
                     initFrameCount++;
-                    yield return 0;
+                    yield return null;
                 }
             }
 
@@ -286,6 +372,7 @@ namespace HoloLensWithOpenCVForUnityExample
                 webCamTexture.Stop ();
                 webCamTexture = null;
                 isInitWaiting = false;
+                initCoroutine = null;
 
                 if (onErrorOccurred != null)
                     onErrorOccurred.Invoke (ErrorCode.TIMEOUT);
@@ -358,6 +445,24 @@ namespace HoloLensWithOpenCVForUnityExample
         }
 
         /// <summary>
+        /// Returns the camera to world matrix.
+        /// </summary>
+        /// <returns>The camera to world matrix.</returns>
+        public virtual Matrix4x4 GetCameraToWorldMatrix ()
+        {
+            return Camera.main.cameraToWorldMatrix;
+        }
+
+        /// <summary>
+        /// Returns the projection matrix matrix.
+        /// </summary>
+        /// <returns>The projection matrix.</returns>
+        public virtual Matrix4x4 GetProjectionMatrix ()
+        {
+            return Camera.main.projectionMatrix;
+        }
+
+        /// <summary>
         /// Indicates whether the video buffer of the frame has been updated.
         /// </summary>
         /// <returns><c>true</c>, if the video buffer has been updated <c>false</c> otherwise.</returns>
@@ -379,34 +484,33 @@ namespace HoloLensWithOpenCVForUnityExample
 
         /// <summary>
         /// Gets the mat of the current frame.
+        /// The Mat object's type is 'CV_8UC4' (RGBA).
         /// </summary>
-        /// <returns>The mat.</returns>
+        /// <returns>The mat of the current frame.</returns>
         public virtual Mat GetMat ()
         {
             if (!hasInitDone || !webCamTexture.isPlaying) {
-                if (rotatedRgbaMat != null) {
-                    return rotatedRgbaMat;
+                if (rotatedFrameMat != null) {
+                    return rotatedFrameMat;
                 } else {
-                    return rgbaMat;
+                    return frameMat;
                 }
             }
 
-            Utils.webCamTextureToMat (webCamTexture, rgbaMat, colors);
+            Utils.webCamTextureToMat (webCamTexture, frameMat, colors);
 
-            if (rotatedRgbaMat != null) {
+            if (rotatedFrameMat != null) {
 
-                using (Mat transposeRgbaMat = rgbaMat.t ()) {
-                    Core.flip (transposeRgbaMat, rotatedRgbaMat, 1);
-                }
+                Core.rotate (frameMat, rotatedFrameMat, Core.ROTATE_90_CLOCKWISE);
 
-                FlipMat (rotatedRgbaMat);
+                FlipMat (rotatedFrameMat);
 
-                return rotatedRgbaMat;
+                return rotatedFrameMat;
             } else {
 
-                FlipMat (rgbaMat);
+                FlipMat (frameMat);
 
-                return rgbaMat;
+                return frameMat;
             }
         }
 
@@ -437,7 +541,7 @@ namespace HoloLensWithOpenCVForUnityExample
                 }
             }
                 
-            if (flipVertical) {
+            if (_flipVertical) {
                 if (flipCode == int.MinValue) {
                     flipCode = 0;
                 } else if (flipCode == 0) {
@@ -449,7 +553,7 @@ namespace HoloLensWithOpenCVForUnityExample
                 }
             }
                 
-            if (flipHorizontal) {
+            if (_flipHorizontal) {
                 if (flipCode == int.MinValue) {
                     flipCode = 1;
                 } else if (flipCode == 0) {
@@ -476,9 +580,21 @@ namespace HoloLensWithOpenCVForUnityExample
         }
 
         /// <summary>
-        /// To release the resources for the initialized method.
+        /// Cancel Init Coroutine.
         /// </summary>
-        protected virtual void _Dispose ()
+        protected virtual void CancelInitCoroutine ()
+        {
+            if (initCoroutine != null) {
+                StopCoroutine (initCoroutine);
+                ((IDisposable)initCoroutine).Dispose ();
+                initCoroutine = null;
+            }
+        }
+
+        /// <summary>
+        /// To release the resources.
+        /// </summary>
+        protected virtual void ReleaseResources ()
         {
             isInitWaiting = false;
             hasInitDone = false;
@@ -487,17 +603,14 @@ namespace HoloLensWithOpenCVForUnityExample
                 webCamTexture.Stop ();
                 webCamTexture = null;
             }
-            if (rgbaMat != null) {
-                rgbaMat.Dispose ();
-                rgbaMat = null;
+            if (frameMat != null) {
+                frameMat.Dispose ();
+                frameMat = null;
             }
-            if (rotatedRgbaMat != null) {
-                rotatedRgbaMat.Dispose ();
-                rotatedRgbaMat = null;
+            if (rotatedFrameMat != null) {
+                rotatedFrameMat.Dispose ();
+                rotatedFrameMat = null;
             }
-
-            if (onDisposed != null)
-                onDisposed.Invoke ();
         }
 
         /// <summary>
@@ -509,11 +622,21 @@ namespace HoloLensWithOpenCVForUnityExample
         /// the garbage collector can reclaim the memory that the <see cref="WebCamTextureToMatHelper"/> was occupying.</remarks>
         public virtual void Dispose ()
         {
-            if (hasInitDone)
-                _Dispose ();
-
             if (colors != null)
                 colors = null;
+
+            if (isInitWaiting)
+            {
+                CancelInitCoroutine ();
+                ReleaseResources ();
+            }
+            else if (hasInitDone)
+            {
+                ReleaseResources ();
+
+                if (onDisposed != null)
+                    onDisposed.Invoke ();
+            }
         }
     }
 }

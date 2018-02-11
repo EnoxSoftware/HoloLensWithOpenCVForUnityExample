@@ -18,7 +18,7 @@ namespace HoloLensWithOpenCVForUnityExample
     /// An example of marker based AR using OpenCVForUnity on Hololens.
     /// Referring to https://github.com/opencv/opencv_contrib/blob/master/modules/aruco/samples/detect_markers.cpp.
     /// </summary>
-    [RequireComponent(typeof(WebCamTextureToMatHelper))]
+    [RequireComponent(typeof(HololensCameraStreamToMatHelper))]
     public class HoloLensArUcoExample : MonoBehaviour
     {
         [HeaderAttribute ("Preview")]
@@ -53,12 +53,6 @@ namespace HoloLensWithOpenCVForUnityExample
         /// Determines if applied the pose estimation.
         /// </summary>
         public bool applyEstimationPose = true;
-
-        /// <summary>
-        /// The downscale ratio.
-        /// </summary>
-        [TooltipAttribute("Factor by which the image will be scaled down before detection.")]
-        public float downscaleRatio = 3;
 
         /// <summary>
         /// The dictionary identifier.
@@ -153,8 +147,12 @@ namespace HoloLensWithOpenCVForUnityExample
         /// <summary>
         /// The webcam texture to mat helper.
         /// </summary>
-        WebCamTextureToMatHelper webCamTextureToMatHelper;
+        HololensCameraStreamToMatHelper webCamTextureToMatHelper;
 
+        /// <summary>
+        /// The image optimization helper.
+        /// </summary>
+        ImageOptimizationHelper imageOptimizationHelper;
 
         Mat grayMat;
         Mat rgbMat4preview;
@@ -175,12 +173,9 @@ namespace HoloLensWithOpenCVForUnityExample
         double distCoeffs4 = 0.0;//tangential distortion coefficient p2.
         double distCoeffs5 = -0.2388065;//radial distortion coefficient k3.
 
-        bool isDetecting = false;
-        bool hasUpdatedARTransformMatrix = false;
         readonly static Queue<Action> ExecuteOnMainThread = new Queue<Action>();
         System.Object sync = new System.Object ();
-        Mat rgbaMat4Thread;
-        Mat downScaleRgbaMat;
+        Mat downScaleFrameMat;
 
         bool _isThreadRunning = false;
         bool isThreadRunning {
@@ -190,15 +185,33 @@ namespace HoloLensWithOpenCVForUnityExample
                 _isThreadRunning = value; }
         }
 
+        bool _isDetecting = false;
+        bool isDetecting {
+            get { lock (sync)
+                return _isDetecting; }
+            set { lock (sync)
+                _isDetecting = value; }
+        }
+
+        bool _hasUpdatedARTransformMatrix = false;
+        bool hasUpdatedARTransformMatrix {
+            get { lock (sync)
+                return _hasUpdatedARTransformMatrix; }
+            set { lock (sync)
+                _hasUpdatedARTransformMatrix = value; }
+        }
+
         // Use this for initialization
         void Start ()
         {
-            if (downscaleRatio < 1)
-                downscaleRatio = 1;
-
             displayCameraPreviewToggle.isOn = displayCameraPreview;
 
-            webCamTextureToMatHelper = gameObject.GetComponent<WebCamTextureToMatHelper> ();
+            imageOptimizationHelper = gameObject.GetComponent<ImageOptimizationHelper> ();
+            webCamTextureToMatHelper = gameObject.GetComponent<HololensCameraStreamToMatHelper> ();
+            #if NETFX_CORE
+            webCamTextureToMatHelper.frameMatAcquired += OnFrameMatAcquired;
+            #endif
+
             webCamTextureToMatHelper.Initialize ();
         }
 
@@ -209,22 +222,23 @@ namespace HoloLensWithOpenCVForUnityExample
         {
             Debug.Log ("OnWebCamTextureToMatHelperInitialized");
 
-            Mat webCamTextureMat = webCamTextureToMatHelper.GetMat ();
+            Mat webCamTextureMat = imageOptimizationHelper.GetDownScaleMat(webCamTextureToMatHelper.GetMat ());
 
             Debug.Log ("Screen.width " + Screen.width + " Screen.height " + Screen.height + " Screen.orientation " + Screen.orientation);
 
-            float width = Mathf.Round(webCamTextureMat.width() / downscaleRatio);
-            float height = Mathf.Round(webCamTextureMat.height() / downscaleRatio);
+            float width = webCamTextureMat.width();
+            float height = webCamTextureMat.height();
 
             texture = new Texture2D ((int)width, (int)height, TextureFormat.RGB24, false);
+
             previewQuad.GetComponent<MeshRenderer>().material.mainTexture = texture;
             previewQuad.transform.localScale = new Vector3 (1, height/width, 1);
             previewQuad.SetActive (displayCameraPreview);
 
             double fx = this.fx;
             double fy = this.fy;
-            double cx = this.cx / downscaleRatio;
-            double cy = this.cy / downscaleRatio;
+            double cx = this.cx / imageOptimizationHelper.downscaleRatio;
+            double cy = this.cy / imageOptimizationHelper.downscaleRatio;
 
             camMatrix = new Mat (3, 3, CvType.CV_64FC1);
             camMatrix.put (0, 0, fx);
@@ -263,7 +277,7 @@ namespace HoloLensWithOpenCVForUnityExample
             Debug.Log ("aspectratio " + aspectratio [0]);
 
 
-            grayMat = new Mat (webCamTextureMat.rows (), webCamTextureMat.cols (), CvType.CV_8UC3);
+            grayMat = new Mat ();
             ids = new Mat ();
             corners = new List<Mat> ();
             rejected = new List<Mat> ();
@@ -288,9 +302,8 @@ namespace HoloLensWithOpenCVForUnityExample
             if (webCamTextureToMatHelper.GetWebCamDevice ().isFrontFacing) {
                 webCamTextureToMatHelper.flipHorizontal = true;
             }
-
-            rgbaMat4Thread = new Mat ();
-            downScaleRgbaMat = new Mat ();
+                
+            downScaleFrameMat = new Mat ((int)height, (int)width, CvType.CV_8UC4);
             rgbMat4preview = new Mat ();
         }
 
@@ -301,7 +314,12 @@ namespace HoloLensWithOpenCVForUnityExample
         {
             Debug.Log ("OnWebCamTextureToMatHelperDisposed");
 
+            #if !NETFX_CORE
             StopThread ();
+            lock (sync) {
+                ExecuteOnMainThread.Clear ();
+            }
+            #endif
 
             if (grayMat != null)
                 grayMat.Dispose ();
@@ -322,9 +340,6 @@ namespace HoloLensWithOpenCVForUnityExample
             if (rotMat != null)
                 rotMat.Dispose ();
 
-            if (rgbaMat4Thread != null)
-                rgbaMat4Thread.Dispose ();
-
             if (rgbMat4preview != null)
                 rgbMat4preview.Dispose ();
         }
@@ -336,6 +351,104 @@ namespace HoloLensWithOpenCVForUnityExample
         public void OnWebCamTextureToMatHelperErrorOccurred(WebCamTextureToMatHelper.ErrorCode errorCode){
             Debug.Log ("OnWebCamTextureToMatHelperErrorOccurred " + errorCode);
         }
+
+        #if NETFX_CORE
+        public void OnFrameMatAcquired (Mat bgraMat, Matrix4x4 projectionMatrix, Matrix4x4 cameraToWorldMatrix)
+        {
+            downScaleFrameMat = imageOptimizationHelper.GetDownScaleMat (bgraMat);
+
+            if (enableDetection ) {
+
+                Imgproc.cvtColor (downScaleFrameMat, grayMat, Imgproc.COLOR_BGRA2GRAY);
+
+                // Detect markers and estimate Pose
+                Aruco.detectMarkers (grayMat, dictionary, corners, ids, detectorParams, rejected, camMatrix, distCoeffs);
+
+                if (applyEstimationPose && ids.total () > 0){
+                    Aruco.estimatePoseSingleMarkers (corners, markerLength, camMatrix, distCoeffs, rvecs, tvecs);
+
+                    for (int i = 0; i < ids.total (); i++) {
+
+                        //This example can display ARObject on only first detected marker.
+                        if (i == 0) {
+
+                            // Position
+                            double[] tvec = tvecs.get (i, 0);
+
+                            // Rotation
+                            double[] rv = rvecs.get (i, 0);
+                            Mat rvec = new Mat (3, 1, CvType.CV_64FC1);
+                            rvec.put (0, 0, rv [0]);
+                            rvec.put (1, 0, rv [1]);
+                            rvec.put (2, 0, rv [2]);
+                            Calib3d.Rodrigues (rvec, rotMat);
+
+                            transformationM.SetRow (0, new Vector4 ((float)rotMat.get (0, 0) [0], (float)rotMat.get (0, 1) [0], (float)rotMat.get (0, 2) [0], (float)tvec [0]));
+                            transformationM.SetRow (1, new Vector4 ((float)rotMat.get (1, 0) [0], (float)rotMat.get (1, 1) [0], (float)rotMat.get (1, 2) [0], (float)tvec [1]));
+                            transformationM.SetRow (2, new Vector4 ((float)rotMat.get (2, 0) [0], (float)rotMat.get (2, 1) [0], (float)rotMat.get (2, 2) [0], (float)(tvec [2] / imageOptimizationHelper.downscaleRatio)));
+
+                            transformationM.SetRow (3, new Vector4 (0, 0, 0, 1));
+
+                            lock (sync){
+                                // Right-handed coordinates system (OpenCV) to left-handed one (Unity)
+                                ARM = invertYM * transformationM;
+
+                                // Apply Z axis inverted matrix.
+                                ARM = ARM * invertZM;
+                            }
+
+                            hasUpdatedARTransformMatrix = true;
+
+                            break;
+                        }
+                    }
+                }
+            }
+
+            Mat rgbMat4preview = null;
+            if (displayCameraPreview) {
+                rgbMat4preview = new Mat ();
+                Imgproc.cvtColor (downScaleFrameMat, rgbMat4preview, Imgproc.COLOR_BGRA2RGB);
+
+                if (ids.total () > 0) {
+                    Aruco.drawDetectedMarkers (rgbMat4preview, corners, ids, new Scalar (255, 0, 0));
+
+                    for (int i = 0; i < ids.total (); i++) {
+                        Aruco.drawAxis (rgbMat4preview, camMatrix, distCoeffs, rvecs, tvecs, markerLength * 0.5f);
+                    }
+                }
+            }
+
+
+            UnityEngine.WSA.Application.InvokeOnAppThread(() => {
+
+                if (!webCamTextureToMatHelper.IsPlaying ()) return;
+
+                if (displayCameraPreview) {
+                    OpenCVForUnity.Utils.fastMatToTexture2D (rgbMat4preview, texture);
+                }
+
+                if (applyEstimationPose) {
+                    if (hasUpdatedARTransformMatrix) {
+                        hasUpdatedARTransformMatrix = false;
+
+                        lock (sync){
+                            // Apply camera transform matrix.
+                            ARM = arCamera.transform.localToWorldMatrix * ARM;
+                            ARUtils.SetTransformFromMatrix (arGameObject.transform, ref ARM);
+                        }
+                    }
+                }
+
+                bgraMat.Dispose ();
+                if (rgbMat4preview != null){
+                    rgbMat4preview.Dispose();
+                }
+
+            }, false);
+        }
+
+        #else
 
         // Update is called once per frame
         void Update ()
@@ -351,7 +464,7 @@ namespace HoloLensWithOpenCVForUnityExample
                 if (enableDetection && !isDetecting ) {
                     isDetecting = true;
 
-                    rgbaMat4Thread = webCamTextureToMatHelper.GetMat ();
+                    downScaleFrameMat = imageOptimizationHelper.GetDownScaleMat (webCamTextureToMatHelper.GetMat ());
 
                     StartThread (ThreadWorker);
                 }
@@ -398,12 +511,7 @@ namespace HoloLensWithOpenCVForUnityExample
 
         private void DetectARUcoMarker()
         {
-            if (downscaleRatio == 1) {
-                downScaleRgbaMat = rgbaMat4Thread;
-            } else {
-                Imgproc.resize (rgbaMat4Thread, downScaleRgbaMat, new Size (), 1.0 / downscaleRatio, 1.0 / downscaleRatio, Imgproc.INTER_LINEAR);
-            }
-            Imgproc.cvtColor (downScaleRgbaMat, grayMat, Imgproc.COLOR_RGBA2GRAY);
+            Imgproc.cvtColor (downScaleFrameMat, grayMat, Imgproc.COLOR_RGBA2GRAY);            
 
             // Detect markers and estimate Pose
             Aruco.detectMarkers (grayMat, dictionary, corners, ids, detectorParams, rejected, camMatrix, distCoeffs);
@@ -429,7 +537,7 @@ namespace HoloLensWithOpenCVForUnityExample
 
                         transformationM.SetRow (0, new Vector4 ((float)rotMat.get (0, 0) [0], (float)rotMat.get (0, 1) [0], (float)rotMat.get (0, 2) [0], (float)tvec [0]));
                         transformationM.SetRow (1, new Vector4 ((float)rotMat.get (1, 0) [0], (float)rotMat.get (1, 1) [0], (float)rotMat.get (1, 2) [0], (float)tvec [1]));
-                        transformationM.SetRow (2, new Vector4 ((float)rotMat.get (2, 0) [0], (float)rotMat.get (2, 1) [0], (float)rotMat.get (2, 2) [0], (float)(tvec [2] / downscaleRatio)));
+                        transformationM.SetRow (2, new Vector4 ((float)rotMat.get (2, 0) [0], (float)rotMat.get (2, 1) [0], (float)rotMat.get (2, 2) [0], (float)(tvec [2] / imageOptimizationHelper.downscaleRatio)));
 
                         transformationM.SetRow (3, new Vector4 (0, 0, 0, 1));
 
@@ -450,7 +558,7 @@ namespace HoloLensWithOpenCVForUnityExample
         private void OnDetectionDone()
         {
             if (displayCameraPreview) {
-                Imgproc.cvtColor (downScaleRgbaMat, rgbMat4preview, Imgproc.COLOR_RGBA2RGB);
+                Imgproc.cvtColor (downScaleFrameMat, rgbMat4preview, Imgproc.COLOR_RGBA2RGB);
 
                 if (ids.total () > 0) {
                     Aruco.drawDetectedMarkers (rgbMat4preview, corners, ids, new Scalar (255, 0, 0));
@@ -475,12 +583,17 @@ namespace HoloLensWithOpenCVForUnityExample
 
             isDetecting = false;
         }
+        #endif
             
         /// <summary>
         /// Raises the destroy event.
         /// </summary>
         void OnDestroy ()
         {
+            imageOptimizationHelper.Dispose ();
+            #if NETFX_CORE
+            webCamTextureToMatHelper.frameMatAcquired -= OnFrameMatAcquired;
+            #endif
             webCamTextureToMatHelper.Dispose ();
         }
 
