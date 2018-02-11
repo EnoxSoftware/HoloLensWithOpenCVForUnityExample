@@ -3,7 +3,7 @@ HoloLens With OpenCVForUnity Example
 
 What's new
 -----
-By using the ÅgHoloLensCameraStreamÅh asset, video capture can now be executed faster.
+By using the "HoloLensCameraStream" asset, video capture can now be executed faster.
 
 
 Demo Video (old version)
@@ -29,14 +29,14 @@ Setup
 * Setup the HoloToolKit. (Mixed Reality ToolKit > Configure > Apply Mixed Reality Project Setting)
 * Import the OpenCVForUnity.
 * Clone HoloLensCameraStream repository.
-* Import the HoloLensCameraStream. (Copy the ÅgHoloLensCameraStream/HoloLensVideoCaptureExample/Assets/CamStream/Åh folder to the ÅgAssets/Åh folder.)
+* Import the HoloLensCameraStream. (Copy the "HoloLensCameraStream/HoloLensVideoCaptureExample/Assets/CamStream/" folder to the "Assets/" folder.)
 * Import the HoloLensWithOpenCVForUnityExample.unitypackage.
 ![buildsetting01.jpg](buildsetting01.jpg) 
-* Add the ÅgAssets/HoloLensWithOpenCVForUnityExample/*.unityÅh files to the ÅgScenes In BuildÅh list in the ÅgBuild SettingsÅh window.
-* Add the ÅgWebCamÅh to ÅgPublishing Settings > CapabilitiesÅh checklist in the ÅgPlayer SettingsÅh window.
+* Add the "Assets/HoloLensWithOpenCVForUnityExample/*.unity" files to the "Scenes In Build" list in the "Build Settings" window.
+* Add the "WebCam" to "Publishing Settings > Capabilities" checklist in the "Player Settings" window.
 ![buildsetting02.jpg](buildsetting02.jpg) 
 * Build and Deploy to HoloLens. (See [https://developer.microsoft.com/en-us/windows/holographic/holograms_100](https://developer.microsoft.com/en-us/windows/holographic/holograms_100))
-*  (Print the AR marker ÅgArUcoMarker_DICT_6X6_250_ID1.pdfÅh on an A4 size paper)
+*  (Print the AR marker "ArUcoMarker_DICT_6X6_250_ID1.pdf" on an A4 size paper)
 
 ScreenShot (old version)
 -----
