@@ -26,6 +26,7 @@ By using the "HoloLensCameraStream" asset, video capture can now be executed fas
     * Setup the HoloToolKit. (Mixed Reality ToolKit > Configure > Apply Mixed Reality Project Setting)
 1. Import the OpenCVForUnity.
     * Setup the OpenCVForUnity. (Tools > OpenCV for Unity > Set Plugn Inport Settings)
+    * Move the "OpenCVForUnity/StreamingAssets/haarcascade_frontalface_alt.xml" and "OpenCVForUnity/StreamingAssets/lbpcascade_frontalface.xml" to the "Assets/StreamingAssets/" folder.
 1. Clone HoloLensCameraStream repository.
     * Copy the "HoloLensCameraStream/HoloLensVideoCaptureExample/Assets/CamStream/" folder to the "Assets/" folder.
 1. Import the HoloLensWithOpenCVForUnityExample.unitypackage.
