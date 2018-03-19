@@ -5,6 +5,8 @@ using System;
 using System.Threading;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using System.IO;
+using System.Xml.Serialization;
 
 #if UNITY_5_3 || UNITY_5_3_OR_NEWER
 using UnityEngine.SceneManagement;
@@ -42,6 +44,16 @@ namespace HoloLensWithOpenCVForUnityExample
         [HeaderAttribute ("Detection")]
 
         /// <summary>
+        /// Determines if restores the camera parameters when the file exists.
+        /// </summary>
+        public bool useStoredCameraParameters = false;
+
+        /// <summary>
+        /// The toggle for switching to use the stored camera parameters.
+        /// </summary>
+        public Toggle useStoredCameraParametersToggle;
+
+        /// <summary>
         /// Determines if enables the detection.
         /// </summary>
         public bool enableDetection = true;
@@ -57,10 +69,10 @@ namespace HoloLensWithOpenCVForUnityExample
         /// <summary>
         /// The dictionary identifier.
         /// </summary>
-        public int dictionaryId = 10;
+        public int dictionaryId = Aruco.DICT_6X6_250;
 
         /// <summary>
-        /// The length of the marker.
+        /// The length of the markers' side. Normally, unit is meters.
         /// </summary>
         public float markerLength = 0.188f;
 
@@ -107,7 +119,7 @@ namespace HoloLensWithOpenCVForUnityExample
         /// <summary>
         /// The identifiers.
         /// </summary>
-        Mat ids ;
+        Mat ids;
 
         /// <summary>
         /// The corners.
@@ -115,9 +127,9 @@ namespace HoloLensWithOpenCVForUnityExample
         List<Mat> corners;
 
         /// <summary>
-        /// The rejected.
+        /// The rejected corners.
         /// </summary>
-        List<Mat> rejected;
+        List<Mat> rejectedCorners;
 
         /// <summary>
         /// The rvecs.
@@ -205,6 +217,7 @@ namespace HoloLensWithOpenCVForUnityExample
         void Start ()
         {
             displayCameraPreviewToggle.isOn = displayCameraPreview;
+            useStoredCameraParametersToggle.isOn = useStoredCameraParameters;
 
             imageOptimizationHelper = gameObject.GetComponent<ImageOptimizationHelper> ();
             webCamTextureToMatHelper = gameObject.GetComponent<HololensCameraStreamToMatHelper> ();
@@ -222,7 +235,11 @@ namespace HoloLensWithOpenCVForUnityExample
         {
             Debug.Log ("OnWebCamTextureToMatHelperInitialized");
 
-            Mat webCamTextureMat = imageOptimizationHelper.GetDownScaleMat(webCamTextureToMatHelper.GetMat ());
+            Mat rawSizeMat = webCamTextureToMatHelper.GetMat ();
+            float rawSizeWidth = rawSizeMat.width();
+            float rawSizeHeight = rawSizeMat.height();
+
+            Mat webCamTextureMat = imageOptimizationHelper.GetDownScaleMat(rawSizeMat);
 
             Debug.Log ("Screen.width " + Screen.width + " Screen.height " + Screen.height + " Screen.orientation " + Screen.orientation);
 
@@ -235,25 +252,70 @@ namespace HoloLensWithOpenCVForUnityExample
             previewQuad.transform.localScale = new Vector3 (1, height/width, 1);
             previewQuad.SetActive (displayCameraPreview);
 
-            double fx = this.fx;
-            double fy = this.fy;
-            double cx = this.cx / imageOptimizationHelper.downscaleRatio;
-            double cy = this.cy / imageOptimizationHelper.downscaleRatio;
 
-            camMatrix = new Mat (3, 3, CvType.CV_64FC1);
-            camMatrix.put (0, 0, fx);
-            camMatrix.put (0, 1, 0);
-            camMatrix.put (0, 2, cx);
-            camMatrix.put (1, 0, 0);
-            camMatrix.put (1, 1, fy);
-            camMatrix.put (1, 2, cy);
-            camMatrix.put (2, 0, 0);
-            camMatrix.put (2, 1, 0);
-            camMatrix.put (2, 2, 1.0f);
+            // set camera parameters.
+            double fx;
+            double fy;
+            double cx;
+            double cy;
+
+            string loadDirectoryPath = Path.Combine (Application.persistentDataPath, "HoloLensArUcoCameraCalibrationExample");
+            string calibratonDirectoryName = "camera_parameters" + rawSizeWidth + "x" + rawSizeHeight;
+            string loadCalibratonFileDirectoryPath = Path.Combine (loadDirectoryPath, calibratonDirectoryName);
+            string loadPath = Path.Combine (loadCalibratonFileDirectoryPath, calibratonDirectoryName + ".xml");
+            if (useStoredCameraParameters && File.Exists (loadPath)) {
+                CameraParameters param;
+                XmlSerializer serializer = new XmlSerializer( typeof( CameraParameters ) );
+                using (var stream = new FileStream (loadPath, FileMode.Open)) {
+                    param = (CameraParameters)serializer.Deserialize (stream);
+                }
+                  
+                fx = param.camera_matrix[0];
+                fy = param.camera_matrix[4];
+                cx = param.camera_matrix[2] / imageOptimizationHelper.downscaleRatio;
+                cy = param.camera_matrix[5] / imageOptimizationHelper.downscaleRatio;
+
+                camMatrix = new Mat (3, 3, CvType.CV_64FC1);
+                camMatrix.put (0, 0, fx);
+                camMatrix.put (0, 1, 0);
+                camMatrix.put (0, 2, cx);
+                camMatrix.put (1, 0, 0);
+                camMatrix.put (1, 1, fy);
+                camMatrix.put (1, 2, cy);
+                camMatrix.put (2, 0, 0);
+                camMatrix.put (2, 1, 0);
+                camMatrix.put (2, 2, 1.0f);
+
+                distCoeffs = new MatOfDouble(param.GetDistortionCoefficients ());
+
+                Debug.Log ("Loaded CameraParameters from a stored XML file.");
+                Debug.Log ("loadPath: " + loadPath);
+
+            } else {
+                fx = this.fx;
+                fy = this.fy;
+                cx = this.cx / imageOptimizationHelper.downscaleRatio;
+                cy = this.cy / imageOptimizationHelper.downscaleRatio;
+
+                camMatrix = new Mat (3, 3, CvType.CV_64FC1);
+                camMatrix.put (0, 0, fx);
+                camMatrix.put (0, 1, 0);
+                camMatrix.put (0, 2, cx);
+                camMatrix.put (1, 0, 0);
+                camMatrix.put (1, 1, fy);
+                camMatrix.put (1, 2, cy);
+                camMatrix.put (2, 0, 0);
+                camMatrix.put (2, 1, 0);
+                camMatrix.put (2, 2, 1.0f);
+
+                distCoeffs = new MatOfDouble (this.distCoeffs1, this.distCoeffs2, this.distCoeffs3, this.distCoeffs4, this.distCoeffs5);
+
+                Debug.Log ("Created a dummy CameraParameters.");
+            }
+
             Debug.Log ("camMatrix " + camMatrix.dump ());
-
-            distCoeffs = new MatOfDouble (distCoeffs1, distCoeffs2, distCoeffs3, distCoeffs4, distCoeffs5);
             Debug.Log ("distCoeffs " + distCoeffs.dump ());
+
 
             //Calibration camera
             Size imageSize = new Size (width, height);
@@ -276,11 +338,13 @@ namespace HoloLensWithOpenCVForUnityExample
             Debug.Log ("principalPoint " + principalPoint.ToString ());
             Debug.Log ("aspectratio " + aspectratio [0]);
 
+            // Display objects near the camera.
+            arCamera.nearClipPlane = 0.01f;
 
             grayMat = new Mat ();
             ids = new Mat ();
             corners = new List<Mat> ();
-            rejected = new List<Mat> ();
+            rejectedCorners = new List<Mat> ();
             rvecs = new Mat ();
             tvecs = new Mat ();
             rotMat = new Mat (3, 3, CvType.CV_64FC1);
@@ -319,7 +383,9 @@ namespace HoloLensWithOpenCVForUnityExample
             lock (sync) {
                 ExecuteOnMainThread.Clear ();
             }
+            isDetecting = false;
             #endif
+            hasUpdatedARTransformMatrix = false;
 
             if (grayMat != null)
                 grayMat.Dispose ();
@@ -329,10 +395,10 @@ namespace HoloLensWithOpenCVForUnityExample
                 item.Dispose ();
             }
             corners.Clear ();
-            foreach (var item in rejected) {
+            foreach (var item in rejectedCorners) {
                 item.Dispose ();
             }
-            rejected.Clear ();
+            rejectedCorners.Clear ();
             if (rvecs != null)
                 rvecs.Dispose ();
             if (tvecs != null)
@@ -357,12 +423,12 @@ namespace HoloLensWithOpenCVForUnityExample
         {
             downScaleFrameMat = imageOptimizationHelper.GetDownScaleMat (bgraMat);
 
-            if (enableDetection ) {
+            if (enableDetection) {
 
                 Imgproc.cvtColor (downScaleFrameMat, grayMat, Imgproc.COLOR_BGRA2GRAY);
 
                 // Detect markers and estimate Pose
-                Aruco.detectMarkers (grayMat, dictionary, corners, ids, detectorParams, rejected, camMatrix, distCoeffs);
+                Aruco.detectMarkers (grayMat, dictionary, corners, ids, detectorParams, rejectedCorners, camMatrix, distCoeffs);
 
                 if (applyEstimationPose && ids.total () > 0){
                     Aruco.estimatePoseSingleMarkers (corners, markerLength, camMatrix, distCoeffs, rvecs, tvecs);
@@ -373,19 +439,20 @@ namespace HoloLensWithOpenCVForUnityExample
                         if (i == 0) {
 
                             // Position
-                            double[] tvec = tvecs.get (i, 0);
+                            double[] tvecArr = tvecs.get (i, 0);
 
                             // Rotation
-                            double[] rv = rvecs.get (i, 0);
+                            double[] rvecArr = rvecs.get (i, 0);
                             Mat rvec = new Mat (3, 1, CvType.CV_64FC1);
-                            rvec.put (0, 0, rv [0]);
-                            rvec.put (1, 0, rv [1]);
-                            rvec.put (2, 0, rv [2]);
+                            rvec.put (0, 0, rvecArr);
                             Calib3d.Rodrigues (rvec, rotMat);
 
-                            transformationM.SetRow (0, new Vector4 ((float)rotMat.get (0, 0) [0], (float)rotMat.get (0, 1) [0], (float)rotMat.get (0, 2) [0], (float)tvec [0]));
-                            transformationM.SetRow (1, new Vector4 ((float)rotMat.get (1, 0) [0], (float)rotMat.get (1, 1) [0], (float)rotMat.get (1, 2) [0], (float)tvec [1]));
-                            transformationM.SetRow (2, new Vector4 ((float)rotMat.get (2, 0) [0], (float)rotMat.get (2, 1) [0], (float)rotMat.get (2, 2) [0], (float)(tvec [2] / imageOptimizationHelper.downscaleRatio)));
+                            double[] rotMatArr = new double[rotMat.total()];
+                            rotMat.get (0, 0, rotMatArr);
+
+                            transformationM.SetRow (0, new Vector4 ((float)rotMatArr [0], (float)rotMatArr [1], (float)rotMatArr [2], (float)tvecArr [0]));
+                            transformationM.SetRow (1, new Vector4 ((float)rotMatArr [3], (float)rotMatArr [4], (float)rotMatArr [5], (float)tvecArr [1]));
+                            transformationM.SetRow (2, new Vector4 ((float)rotMatArr [6], (float)rotMatArr [7], (float)rotMatArr [8], (float)(tvecArr [2] / imageOptimizationHelper.downscaleRatio)));
 
                             transformationM.SetRow (3, new Vector4 (0, 0, 0, 1));
 
@@ -411,10 +478,17 @@ namespace HoloLensWithOpenCVForUnityExample
                 Imgproc.cvtColor (downScaleFrameMat, rgbMat4preview, Imgproc.COLOR_BGRA2RGB);
 
                 if (ids.total () > 0) {
-                    Aruco.drawDetectedMarkers (rgbMat4preview, corners, ids, new Scalar (255, 0, 0));
+                    Aruco.drawDetectedMarkers (rgbMat4preview, corners, ids, new Scalar (0, 255, 0));
 
-                    for (int i = 0; i < ids.total (); i++) {
-                        Aruco.drawAxis (rgbMat4preview, camMatrix, distCoeffs, rvecs, tvecs, markerLength * 0.5f);
+                    if (applyEstimationPose) {
+                        for (int i = 0; i < ids.total (); i++) {
+                            using (Mat rvec = new Mat (rvecs, new OpenCVForUnity.Rect (0, i, 1, 1)))
+                            using (Mat tvec = new Mat (tvecs, new OpenCVForUnity.Rect (0, i, 1, 1))) {
+
+                                // In this example we are processing with RGB color image, so Axis-color correspondences are X: blue, Y: green, Z: red. (Usually X: red, Y: green, Z: blue)
+                                Aruco.drawAxis (rgbMat4preview, camMatrix, distCoeffs, rvec, tvec, markerLength * 0.5f);
+                            }
+                        }
                     }
                 }
             }
@@ -514,7 +588,7 @@ namespace HoloLensWithOpenCVForUnityExample
             Imgproc.cvtColor (downScaleFrameMat, grayMat, Imgproc.COLOR_RGBA2GRAY);            
 
             // Detect markers and estimate Pose
-            Aruco.detectMarkers (grayMat, dictionary, corners, ids, detectorParams, rejected, camMatrix, distCoeffs);
+            Aruco.detectMarkers (grayMat, dictionary, corners, ids, detectorParams, rejectedCorners, camMatrix, distCoeffs);
 
             if (applyEstimationPose && ids.total () > 0){
                 Aruco.estimatePoseSingleMarkers (corners, markerLength, camMatrix, distCoeffs, rvecs, tvecs);
@@ -525,19 +599,20 @@ namespace HoloLensWithOpenCVForUnityExample
                     if (i == 0) {
 
                         // Position
-                        double[] tvec = tvecs.get (i, 0);
+                        double[] tvecArr = tvecs.get (i, 0);
 
                         // Rotation
-                        double[] rv = rvecs.get (i, 0);
+                        double[] rvecArr = rvecs.get (i, 0);
                         Mat rvec = new Mat (3, 1, CvType.CV_64FC1);
-                        rvec.put (0, 0, rv [0]);
-                        rvec.put (1, 0, rv [1]);
-                        rvec.put (2, 0, rv [2]);
+                        rvec.put (0, 0, rvecArr);
                         Calib3d.Rodrigues (rvec, rotMat);
 
-                        transformationM.SetRow (0, new Vector4 ((float)rotMat.get (0, 0) [0], (float)rotMat.get (0, 1) [0], (float)rotMat.get (0, 2) [0], (float)tvec [0]));
-                        transformationM.SetRow (1, new Vector4 ((float)rotMat.get (1, 0) [0], (float)rotMat.get (1, 1) [0], (float)rotMat.get (1, 2) [0], (float)tvec [1]));
-                        transformationM.SetRow (2, new Vector4 ((float)rotMat.get (2, 0) [0], (float)rotMat.get (2, 1) [0], (float)rotMat.get (2, 2) [0], (float)(tvec [2] / imageOptimizationHelper.downscaleRatio)));
+                        double[] rotMatArr = new double[rotMat.total()];
+                        rotMat.get (0, 0, rotMatArr);
+
+                        transformationM.SetRow (0, new Vector4 ((float)rotMatArr [0], (float)rotMatArr [1], (float)rotMatArr [2], (float)tvecArr [0]));
+                        transformationM.SetRow (1, new Vector4 ((float)rotMatArr [3], (float)rotMatArr [4], (float)rotMatArr [5], (float)tvecArr [1]));
+                        transformationM.SetRow (2, new Vector4 ((float)rotMatArr [6], (float)rotMatArr [7], (float)rotMatArr [8], (float)(tvecArr [2] / imageOptimizationHelper.downscaleRatio)));
 
                         transformationM.SetRow (3, new Vector4 (0, 0, 0, 1));
 
@@ -561,10 +636,17 @@ namespace HoloLensWithOpenCVForUnityExample
                 Imgproc.cvtColor (downScaleFrameMat, rgbMat4preview, Imgproc.COLOR_RGBA2RGB);
 
                 if (ids.total () > 0) {
-                    Aruco.drawDetectedMarkers (rgbMat4preview, corners, ids, new Scalar (255, 0, 0));
+                    Aruco.drawDetectedMarkers (rgbMat4preview, corners, ids, new Scalar (0, 255, 0));
 
-                    for (int i = 0; i < ids.total (); i++) {
-                        Aruco.drawAxis (rgbMat4preview, camMatrix, distCoeffs, rvecs, tvecs, markerLength * 0.5f);
+                    if (applyEstimationPose) {
+                        for (int i = 0; i < ids.total (); i++) {
+                            using (Mat rvec = new Mat (rvecs, new OpenCVForUnity.Rect (0, i, 1, 1)))
+                            using (Mat tvec = new Mat (tvecs, new OpenCVForUnity.Rect (0, i, 1, 1))) {
+
+                                // In this example we are processing with RGB color image, so Axis-color correspondences are X: blue, Y: green, Z: red. (Usually X: red, Y: green, Z: blue)
+                                Aruco.drawAxis (rgbMat4preview, camMatrix, distCoeffs, rvec, tvec, markerLength * 0.5f);
+                            }
+                        }
                     }
                 }
 
@@ -652,6 +734,22 @@ namespace HoloLensWithOpenCVForUnityExample
                 displayCameraPreview = false;
             }
             previewQuad.SetActive (displayCameraPreview);
+        }
+
+        /// <summary>
+        /// Raises the use stored camera parameters toggle value changed event.
+        /// </summary>
+        public void OnUseStoredCameraParametersToggleValueChanged ()
+        {
+            if (useStoredCameraParametersToggle.isOn) {
+                useStoredCameraParameters = true;
+            } else {
+                useStoredCameraParameters = false;
+            }
+
+            if (webCamTextureToMatHelper != null && webCamTextureToMatHelper.IsInitialized ()) {
+                webCamTextureToMatHelper.Initialize ();
+            }
         }
 
         /// <summary>

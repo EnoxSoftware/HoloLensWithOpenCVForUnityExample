@@ -1212,8 +1212,8 @@ GameObject:
   - component: {fileID: 1076083698}
   - component: {fileID: 1076083697}
   - component: {fileID: 1076083696}
-  - component: {fileID: 1076083695}
   - component: {fileID: 1076083700}
+  - component: {fileID: 1076083695}
   m_Layer: 0
   m_Name: Quad
   m_TagString: Untagged
@@ -1315,15 +1315,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a80f11196f5e6394aaec3da665ebfc5a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  requestedDeviceName: 
-  requestedWidth: 640
-  requestedHeight: 480
-  requestedIsFrontFacing: 0
-  requestedFPS: 30
-  flipVertical: 0
-  flipHorizontal: 0
-  rotate90Degree: 0
-  timeoutFrameCount: 300
+  _requestedDeviceName: 
+  _requestedWidth: 640
+  _requestedHeight: 480
+  _requestedIsFrontFacing: 0
+  _requestedFPS: 30
+  _requestedRotate90Degree: 0
+  _flipVertical: 0
+  _flipHorizontal: 0
   onInitialized:
     m_PersistentCalls:
       m_Calls:
@@ -1413,7 +1412,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 80, y: -220}
+  m_AnchoredPosition: {x: 80, y: -170}
   m_SizeDelta: {x: 160, y: 40}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1197189833

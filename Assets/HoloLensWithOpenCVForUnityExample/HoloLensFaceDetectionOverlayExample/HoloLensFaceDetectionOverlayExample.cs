@@ -189,6 +189,8 @@ namespace HoloLensWithOpenCVForUnityExample
             lock (sync) {
                 ExecuteOnMainThread.Clear ();
             }
+            hasUpdatedDetectionResult = false;
+            isDetecting = false;
 
             if (grayMat != null)
                 grayMat.Dispose ();

@@ -15,7 +15,7 @@ By using the "HoloLensCameraStream" asset, video capture can now be executed fas
 * Visual Studio 2017 (v151.5.0)  
 * Unity 2017.1.3f1  
 * HoloToolkit-Unity-v1.2017.1.2 ([https://github.com/Microsoft/MixedRealityToolkit-Unity/releases](https://github.com/Microsoft/MixedRealityToolkit-Unity/releases))  
-* OpenCV for Unity 2.2.6 ([https://assetstore.unity.com/packages/tools/integration/opencv-for-unity-21088](https://assetstore.unity.com/packages/tools/integration/opencv-for-unity-21088))  
+* OpenCV for Unity 2.2.7 ([https://assetstore.unity.com/packages/tools/integration/opencv-for-unity-21088](https://assetstore.unity.com/packages/tools/integration/opencv-for-unity-21088))  
 * HoloLensCameraStream ([https://github.com/VulcanTechnologies/HoloLensCameraStream](https://github.com/VulcanTechnologies/HoloLensCameraStream))  
 
 

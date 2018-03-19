@@ -74,5 +74,14 @@ namespace HoloLensWithOpenCVForUnityExample
             Application.LoadLevel ("HoloLensArUcoExample");
             #endif
         }
+
+        public void OnHoloLensArUcoCameraCalibrationExampleButtonClick ()
+        {
+            #if UNITY_5_3 || UNITY_5_3_OR_NEWER
+            SceneManager.LoadScene ("HoloLensArUcoCameraCalibrationExample");
+            #else
+            Application.LoadLevel ("HoloLensArUcoCameraCalibrationExample");
+            #endif
+        }
     }
 }

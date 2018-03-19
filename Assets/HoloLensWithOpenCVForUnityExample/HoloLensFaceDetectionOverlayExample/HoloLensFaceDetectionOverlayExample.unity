@@ -962,9 +962,8 @@ GameObject:
   - component: {fileID: 1076083698}
   - component: {fileID: 1076083697}
   - component: {fileID: 1076083696}
-  - component: {fileID: 1076083695}
   - component: {fileID: 1076083702}
-  - component: {fileID: 1076083700}
+  - component: {fileID: 1076083695}
   - component: {fileID: 1076083701}
   m_Layer: 0
   m_Name: Quad
@@ -1055,19 +1054,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1076083700
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1076083694}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 28e142b476c838049871b666621dda2e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _downscaleRatio: 2
-  _frameSkippingRatio: 2
 --- !u!114 &1076083701
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1303,7 +1289,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 80, y: -220}
+  m_AnchoredPosition: {x: 80, y: -70}
   m_SizeDelta: {x: 160, y: 40}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1197189833
