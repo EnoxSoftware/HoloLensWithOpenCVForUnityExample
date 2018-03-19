@@ -20,7 +20,7 @@ namespace HoloLensWithOpenCVForUnityExample
 
     /// <summary>
     /// Hololens camera stream to mat helper.
-    /// v 1.0.0
+    /// v 1.0.1
     /// 
     /// Combination of camera frame size and frame rate that can be acquired on Hololens. (width x height : framerate)
     /// 1280 x 720 : 30
@@ -63,7 +63,7 @@ namespace HoloLensWithOpenCVForUnityExample
         protected System.Object latestImageBytesLockObject = new System.Object ();
 
         protected HoloLensCameraStream.VideoCapture videoCapture;
-        protected CameraParameters cameraParams;
+        protected HoloLensCameraStream.CameraParameters cameraParams;
 
         protected Matrix4x4 _cameraToWorldMatrix = Matrix4x4.identity;
         protected Matrix4x4 cameraToWorldMatrix {
@@ -116,6 +116,14 @@ namespace HoloLensWithOpenCVForUnityExample
             set { lock (lockObject)
                 _hasInitDone = value; }
         }
+            
+        protected bool _hasInitEventCompleted = false;
+        protected bool hasInitEventCompleted {
+            get { lock (lockObject)
+                return _hasInitEventCompleted; }
+            set { lock (lockObject)
+                _hasInitEventCompleted = value; }
+        }
 
         protected virtual void LateUpdate ()
         {
@@ -159,7 +167,7 @@ namespace HoloLensWithOpenCVForUnityExample
             didUpdateThisFrame = true;
             didUpdateImageBufferInCurrentFrame = true;
 
-            if (hasInitDone && frameMatAcquired != null)
+            if (hasInitEventCompleted && frameMatAcquired != null)
             {
                 Mat mat = new Mat (cameraParams.cameraResolutionHeight, cameraParams.cameraResolutionWidth, CvType.CV_8UC4);
                 OpenCVForUnity.Utils.copyToMat<byte> (latestImageBytes, mat);
@@ -181,7 +189,7 @@ namespace HoloLensWithOpenCVForUnityExample
             }
         }
 
-        protected virtual CameraParameters CreateCameraParams (HoloLensCameraStream.VideoCapture videoCapture)
+        protected virtual HoloLensCameraStream.CameraParameters CreateCameraParams (HoloLensCameraStream.VideoCapture videoCapture)
         {
             int min1 = videoCapture.GetSupportedResolutions().Min (r => Mathf.Abs((r.width * r.height) - (_requestedWidth * _requestedHeight)));
             HoloLensCameraStream.Resolution resolution = videoCapture.GetSupportedResolutions().First (r => Mathf.Abs((r.width * r.height) - (_requestedWidth * _requestedHeight)) == min1);
@@ -189,7 +197,7 @@ namespace HoloLensWithOpenCVForUnityExample
             float min2 = videoCapture.GetSupportedFrameRatesForResolution(resolution).Min (f => Mathf.Abs(f - _requestedFPS));
             float frameRate = videoCapture.GetSupportedFrameRatesForResolution(resolution).First (f => Mathf.Abs(f - _requestedFPS) == min2);
 
-            CameraParameters cameraParams = new CameraParameters();
+            HoloLensCameraStream.CameraParameters cameraParams = new HoloLensCameraStream.CameraParameters();
             cameraParams.cameraResolutionHeight = resolution.height;
             cameraParams.cameraResolutionWidth = resolution.width;
             cameraParams.frameRate = Mathf.RoundToInt(frameRate);
@@ -279,7 +287,11 @@ namespace HoloLensWithOpenCVForUnityExample
             } else {                
 
                 //Fetch a pointer to Unity's spatial coordinate system if you need pixel mapping
+                #if UNITY_2017_2_OR_NEWER
+                spatialCoordinateSystemPtr = UnityEngine.XR.WSA.WorldManager.GetNativeISpatialCoordinateSystemPtr ();
+                #else
                 spatialCoordinateSystemPtr = UnityEngine.VR.WSA.WorldManager.GetNativeISpatialCoordinateSystemPtr ();
+                #endif
 
                 HoloLensCameraStream.VideoCapture.CreateAync (videoCapture => {
 
@@ -348,12 +360,13 @@ namespace HoloLensWithOpenCVForUnityExample
                     }
 
                     isInitWaiting = false;
+                    hasInitDone = true;
                     initCoroutine = null;
 
                     if (onInitialized != null)
                         onInitialized.Invoke ();
 
-                    hasInitDone = true;
+                    hasInitEventCompleted = true;
 
                     break;
                 } else {
@@ -388,6 +401,15 @@ namespace HoloLensWithOpenCVForUnityExample
                         onErrorOccurred.Invoke (ErrorCode.TIMEOUT);
                 }
             }
+        }
+
+        /// <summary>
+        /// Indicates whether this instance has been initialized.
+        /// </summary>
+        /// <returns><c>true</c>, if this instance has been initialized, <c>false</c> otherwise.</returns>
+        public override bool IsInitialized ()
+        {      
+            return hasInitDone;
         }
 
         /// <summary>
@@ -572,6 +594,7 @@ namespace HoloLensWithOpenCVForUnityExample
         {
             isInitWaiting = false;
             hasInitDone = false;
+            hasInitEventCompleted = false;
 
             latestImageBytes = null;
             didUpdateThisFrame = false;

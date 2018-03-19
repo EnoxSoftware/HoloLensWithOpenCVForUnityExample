@@ -9,14 +9,14 @@ namespace HoloLensWithOpenCVForUnityExample
 {
     /// <summary>
     /// Webcam texture to mat helper.
-    /// v 1.0.5
+    /// v 1.0.6
     /// </summary>
     public class WebCamTextureToMatHelper : MonoBehaviour
     {
         /// <summary>
-        /// Set the name of the device to use.
+        /// Set the name of the device to use. (or device index)
         /// </summary>
-        [SerializeField, FormerlySerializedAs("requestedDeviceName"), TooltipAttribute ("Set the name of the device to use.")]
+        [SerializeField, FormerlySerializedAs("requestedDeviceName"), TooltipAttribute ("Set the name of the device to use. (or device index)")]
         protected string _requestedDeviceName = null;
         public string requestedDeviceName {
             get { return _requestedDeviceName; } 
@@ -92,10 +92,11 @@ namespace HoloLensWithOpenCVForUnityExample
             get { return _flipHorizontal; } 
             set { _flipHorizontal = value; }
         }
-
+            
         /// <summary>
-        /// The timeout frame count.
+        /// The number of frames before the initialization process times out.
         /// </summary>
+        [SerializeField, FormerlySerializedAs("timeoutFrameCount"), TooltipAttribute ("The number of frames before the initialization process times out.")]
         protected int _timeoutFrameCount = 300;
         public int timeoutFrameCount {
             get { return _timeoutFrameCount; } 
@@ -275,10 +276,27 @@ namespace HoloLensWithOpenCVForUnityExample
             isInitWaiting = true;
 
             if (!String.IsNullOrEmpty (requestedDeviceName)) {
-                webCamTexture = new WebCamTexture (requestedDeviceName, requestedWidth, requestedHeight, requestedFPS);
-            } else {
+                int requestedDeviceIndex = -1;
+                if (Int32.TryParse (requestedDeviceName, out requestedDeviceIndex)) {                    
+                    if (requestedDeviceIndex >= 0 && requestedDeviceIndex < WebCamTexture.devices.Length) {
+                        webCamDevice = WebCamTexture.devices [requestedDeviceIndex];
+                        webCamTexture = new WebCamTexture (webCamDevice.name, requestedWidth, requestedHeight, requestedFPS);
+                    }
+                } else {
+                    for (int cameraIndex = 0; cameraIndex < WebCamTexture.devices.Length; cameraIndex++) {
+                        if (WebCamTexture.devices [cameraIndex].name == requestedDeviceName) {
+                            webCamTexture = new WebCamTexture (requestedDeviceName, requestedWidth, requestedHeight, requestedFPS);
+                        }
+                    }
+                }
+
+                if (webCamTexture == null)
+                    Debug.Log ("Cannot find webcam device " + requestedDeviceName + ".");
+            }
+
+            if (webCamTexture == null) {
                 // Checks how many and which cameras are available on the device
-                for (int cameraIndex = 0; cameraIndex < WebCamTexture.devices.Length; cameraIndex++) {
+                for (int cameraIndex = 0; cameraIndex < WebCamTexture.devices.Length; cameraIndex++) {                   
                     if (WebCamTexture.devices [cameraIndex].isFrontFacing == requestedIsFrontFacing) {
 
                         webCamDevice = WebCamTexture.devices [cameraIndex];
@@ -334,7 +352,7 @@ namespace HoloLensWithOpenCVForUnityExample
                     #endif
                 #endif
 
-                    Debug.Log ("WebCamTextureToMatHelper:: " + "name:" + webCamTexture.name + " width:" + webCamTexture.width + " height:" + webCamTexture.height + " fps:" + webCamTexture.requestedFPS
+                    Debug.Log ("WebCamTextureToMatHelper:: " + "devicename:" + webCamTexture.deviceName + " name:" + webCamTexture.name + " width:" + webCamTexture.width + " height:" + webCamTexture.height + " fps:" + webCamTexture.requestedFPS
                         + " videoRotationAngle:" + webCamTexture.videoRotationAngle + " videoVerticallyMirrored:" + webCamTexture.videoVerticallyMirrored + " isFrongFacing:" + webCamDevice.isFrontFacing);
 
                     if (colors == null || colors.Length != webCamTexture.width * webCamTexture.height)
