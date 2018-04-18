@@ -1,5 +1,7 @@
 ﻿#pragma warning disable 0067
+#if !DISABLE_HOLOLENSCAMSTREAM_API
 using HoloLensCameraStream;
+#endif
 using OpenCVForUnity;
 using System;
 using System.Collections;
@@ -20,7 +22,7 @@ namespace HoloLensWithOpenCVForUnityExample
 
     /// <summary>
     /// Hololens camera stream to mat helper.
-    /// v 1.0.1
+    /// v 1.0.3
     /// 
     /// Combination of camera frame size and frame rate that can be acquired on Hololens. (width x height : framerate)
     /// 1280 x 720 : 30
@@ -55,9 +57,19 @@ namespace HoloLensWithOpenCVForUnityExample
         /// You must properly initialize the HololensCameraStreamToMatHelper, 
         /// including calling Play() before this event will begin firing.
         /// </summary>
-        public event FrameMatAcquiredCallback frameMatAcquired;
+        public virtual event FrameMatAcquiredCallback frameMatAcquired;
 
-        #if NETFX_CORE
+        #if NETFX_CORE && !DISABLE_HOLOLENSCAMSTREAM_API
+        public override float requestedFPS {
+            get { return _requestedFPS; } 
+            set {
+                _requestedFPS = Mathf.Clamp(value, -1f, float.MaxValue);
+                if (hasInitDone) {
+                    Initialize ();
+                }
+            }
+        }
+
         protected System.Object lockObject = new System.Object ();
         protected System.Object matrixLockObject = new System.Object ();
         protected System.Object latestImageBytesLockObject = new System.Object ();
@@ -172,17 +184,17 @@ namespace HoloLensWithOpenCVForUnityExample
                 Mat mat = new Mat (cameraParams.cameraResolutionHeight, cameraParams.cameraResolutionWidth, CvType.CV_8UC4);
                 OpenCVForUnity.Utils.copyToMat<byte> (latestImageBytes, mat);
 
-                if (_requestedRotate90Degree) {
+                if (_rotate90Degree) {
                     Mat rotatedFrameMat = new Mat (cameraParams.cameraResolutionWidth, cameraParams.cameraResolutionHeight, CvType.CV_8UC4);
                     Core.rotate (mat, rotatedFrameMat, Core.ROTATE_90_CLOCKWISE);
                     mat.Dispose();
 
-                    FlipMat (rotatedFrameMat);
+                    FlipMat (rotatedFrameMat, _flipVertical, _flipHorizontal);
 
                     frameMatAcquired.Invoke (rotatedFrameMat, projectionMatrix, cameraToWorldMatrix);
                 }else{
 
-                    FlipMat (mat);
+                    FlipMat (mat, _flipVertical, _flipHorizontal);
 
                     frameMatAcquired.Invoke (mat, projectionMatrix, cameraToWorldMatrix);
                 }
@@ -214,14 +226,17 @@ namespace HoloLensWithOpenCVForUnityExample
         /// <returns>The video capture.</returns>
         public virtual HoloLensCameraStream.VideoCapture GetVideoCapture ()
         {
-            #if NETFX_CORE
+            #if NETFX_CORE && !DISABLE_HOLOLENSCAMSTREAM_API
             return videoCapture;
             #else
             return null;
             #endif
         }
 
-        #if NETFX_CORE
+        #if NETFX_CORE && !DISABLE_HOLOLENSCAMSTREAM_API
+        // Update is called once per frame
+        protected override void Update () {}
+
         /// <summary>
         /// Raises the destroy event.
         /// </summary>
@@ -355,7 +370,7 @@ namespace HoloLensWithOpenCVForUnityExample
                     frameMat = new Mat (cameraParams.cameraResolutionHeight, cameraParams.cameraResolutionWidth, CvType.CV_8UC4);
                     screenOrientation = Screen.orientation;
 
-                    if (_requestedRotate90Degree) {
+                    if (_rotate90Degree) {
                         rotatedFrameMat = new Mat (cameraParams.cameraResolutionWidth, cameraParams.cameraResolutionHeight, CvType.CV_8UC4);
                     }
 
@@ -413,7 +428,7 @@ namespace HoloLensWithOpenCVForUnityExample
         }
 
         /// <summary>
-        /// Starts the webcam texture.
+        /// Starts the camera.
         /// </summary>
         public override void Play ()
         {
@@ -436,7 +451,7 @@ namespace HoloLensWithOpenCVForUnityExample
         }
 
         /// <summary>
-        /// Pauses the webcam texture
+        /// Pauses the active camera.
         /// </summary>
         public override void Pause ()
         {
@@ -445,7 +460,7 @@ namespace HoloLensWithOpenCVForUnityExample
         }
 
         /// <summary>
-        /// Stops the webcam texture.
+        /// Stops the active camera.
         /// </summary>
         public override void Stop ()
         {
@@ -468,9 +483,9 @@ namespace HoloLensWithOpenCVForUnityExample
         }
 
         /// <summary>
-        /// Indicates whether the webcam texture is currently playing.
+        /// Indicates whether the active camera is currently playing.
         /// </summary>
-        /// <returns><c>true</c>, if the webcam texture is playing, <c>false</c> otherwise.</returns>
+        /// <returns><c>true</c>, if the active camera is playing, <c>false</c> otherwise.</returns>
         public override bool IsPlaying ()
         {
             if (!hasInitDone)
@@ -478,6 +493,33 @@ namespace HoloLensWithOpenCVForUnityExample
             
             return videoCapture.IsStreaming;
         }
+
+        /// <summary>
+        /// Indicates whether the active camera device is currently front facng.
+        /// </summary>
+        /// <returns><c>true</c>, if the active camera device is front facng, <c>false</c> otherwise.</returns>
+        public override bool IsFrontFacing ()
+        {
+            return false;
+        }
+
+        /// <summary>
+        /// Returns the active camera device name.
+        /// </summary>
+        /// <returns>The active camera device name.</returns>
+        public override string GetDeviceName ()
+        {
+            return "";
+        }
+
+        /// <summary>
+        /// Returns the active camera framerate.
+        /// </summary>
+        /// <returns>The active camera framerate.</returns>
+        public override float GetFPS ()
+        {
+            return hasInitDone ? cameraParams.frameRate : -1f;
+        }  
 
         /// <summary>
         /// Returns the webcam texture.
@@ -539,12 +581,12 @@ namespace HoloLensWithOpenCVForUnityExample
 
                 Core.rotate (frameMat, rotatedFrameMat, Core.ROTATE_90_CLOCKWISE);
 
-                FlipMat (rotatedFrameMat);
+                FlipMat (rotatedFrameMat, _flipVertical, _flipHorizontal);
                     
                 return rotatedFrameMat;
             } else {
 
-                FlipMat (frameMat);
+                FlipMat (frameMat, _flipVertical, _flipHorizontal);
 
                 return frameMat;
             }
@@ -554,7 +596,7 @@ namespace HoloLensWithOpenCVForUnityExample
         /// Flips the mat.
         /// </summary>
         /// <param name="mat">Mat.</param>
-        protected override void FlipMat (Mat mat)
+        protected override void FlipMat (Mat mat, bool flipVertical, bool flipHorizontal)
         {
             int flipCode = int.MinValue;
 

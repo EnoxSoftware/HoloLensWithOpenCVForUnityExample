@@ -125,7 +125,7 @@ namespace HoloLensWithOpenCVForUnityExample
             displayCameraImageToggle.isOn = displayCameraImage;
 
             webCamTextureToMatHelper = gameObject.GetComponent<HololensCameraStreamToMatHelper> ();
-            #if NETFX_CORE
+            #if NETFX_CORE && !DISABLE_HOLOLENSCAMSTREAM_API
             webCamTextureToMatHelper.frameMatAcquired += OnFrameMatAcquired;
             #endif
             webCamTextureToMatHelper.Initialize ();
@@ -142,7 +142,7 @@ namespace HoloLensWithOpenCVForUnityExample
 
             Mat webCamTextureMat = webCamTextureToMatHelper.GetMat ();
 
-            #if NETFX_CORE
+            #if NETFX_CORE && !DISABLE_HOLOLENSCAMSTREAM_API
             // HololensCameraStream always returns image data in BGRA format.
             texture = new Texture2D (webCamTextureMat.cols (), webCamTextureMat.rows (), TextureFormat.BGRA32, false);
             #else
@@ -158,7 +158,7 @@ namespace HoloLensWithOpenCVForUnityExample
             quad_renderer.sharedMaterial.SetVector ("_VignetteOffset", new Vector4(0, 0));
 
             Matrix4x4 projectionMatrix;
-            #if NETFX_CORE
+            #if NETFX_CORE && !DISABLE_HOLOLENSCAMSTREAM_API
             projectionMatrix = webCamTextureToMatHelper.GetProjectionMatrix ();
             quad_renderer.sharedMaterial.SetMatrix ("_CameraProjectionMatrix", projectionMatrix);
             #else
@@ -246,7 +246,7 @@ namespace HoloLensWithOpenCVForUnityExample
             Debug.Log ("OnWebCamTextureToMatHelperErrorOccurred " + errorCode);
         }
 
-        #if NETFX_CORE
+        #if NETFX_CORE && !DISABLE_HOLOLENSCAMSTREAM_API
         public void OnFrameMatAcquired (Mat bgraMat, Matrix4x4 projectionMatrix, Matrix4x4 cameraToWorldMatrix)
         {
             Imgproc.cvtColor (bgraMat, grayMat, Imgproc.COLOR_BGRA2GRAY);
@@ -583,7 +583,7 @@ namespace HoloLensWithOpenCVForUnityExample
         /// </summary>
         void OnDestroy ()
         {
-            #if NETFX_CORE
+            #if NETFX_CORE && !DISABLE_HOLOLENSCAMSTREAM_API
             webCamTextureToMatHelper.frameMatAcquired -= OnFrameMatAcquired;
             #endif
             webCamTextureToMatHelper.Dispose ();

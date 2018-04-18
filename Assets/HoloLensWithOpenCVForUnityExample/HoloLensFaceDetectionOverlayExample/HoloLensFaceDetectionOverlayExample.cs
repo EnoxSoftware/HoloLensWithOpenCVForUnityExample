@@ -112,7 +112,7 @@ namespace HoloLensWithOpenCVForUnityExample
             useSeparateDetectionToggle.isOn = useSeparateDetection;
 
             webCamTextureToMatHelper = gameObject.GetComponent<HololensCameraStreamToMatHelper> ();
-            #if NETFX_CORE
+            #if NETFX_CORE && !DISABLE_HOLOLENSCAMSTREAM_API
             webCamTextureToMatHelper.frameMatAcquired += OnFrameMatAcquired;
             #endif
             webCamTextureToMatHelper.Initialize ();
@@ -133,7 +133,7 @@ namespace HoloLensWithOpenCVForUnityExample
             Debug.Log ("Screen.width " + Screen.width + " Screen.height " + Screen.height + " Screen.orientation " + Screen.orientation);
 
 
-            #if NETFX_CORE
+            #if NETFX_CORE && !DISABLE_HOLOLENSCAMSTREAM_API
             projectionMatrix = webCamTextureToMatHelper.GetProjectionMatrix ();
             #else
             //This value is obtained from PhotoCapture's TryGetProjectionMatrix() method.I do not know whether this method is good.
@@ -216,7 +216,7 @@ namespace HoloLensWithOpenCVForUnityExample
         }
 
 
-        #if NETFX_CORE
+        #if NETFX_CORE && !DISABLE_HOLOLENSCAMSTREAM_API
         public void OnFrameMatAcquired (Mat bgraMat, Matrix4x4 projectionMatrix, Matrix4x4 cameraToWorldMatrix)
         {            
             Imgproc.cvtColor (bgraMat, grayMat, Imgproc.COLOR_BGRA2GRAY);
@@ -536,7 +536,7 @@ namespace HoloLensWithOpenCVForUnityExample
         /// </summary>
         void OnDestroy ()
         {
-            #if NETFX_CORE
+            #if NETFX_CORE && !DISABLE_HOLOLENSCAMSTREAM_API
             webCamTextureToMatHelper.frameMatAcquired -= OnFrameMatAcquired;
             #endif
             webCamTextureToMatHelper.Dispose ();

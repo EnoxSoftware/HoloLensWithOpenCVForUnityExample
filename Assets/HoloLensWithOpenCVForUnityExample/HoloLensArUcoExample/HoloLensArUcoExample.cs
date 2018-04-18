@@ -91,18 +91,45 @@ namespace HoloLensWithOpenCVForUnityExample
         /// </summary>
         public Camera arCamera;
 
+        [Space(10)]
+
+        /// <summary>
+        /// Determines if enable low pass filter.
+        /// </summary>
+        public bool enableLowPassFilter;
+
+        /// <summary>
+        /// The enable low pass filter toggle.
+        /// </summary>
+        public Toggle enableLowPassFilterToggle;
+
+        /// <summary>
+        /// The position low pass. (Value in meters)
+        /// </summary>
+        public float positionLowPass = 0.025f;
+
+        /// <summary>
+        /// The rotation low pass. (Value in degrees)
+        /// </summary>
+        public float rotationLowPass = 3f;
+
+        /// <summary>
+        /// The old pose data.
+        /// </summary>
+        PoseData oldPoseData;
+
         /// <summary>
         /// The cameraparam matrix.
         /// </summary>
         Mat camMatrix;
 
         /// <summary>
-        /// The matrix that inverts the Y axis.
+        /// The matrix that inverts the Y-axis.
         /// </summary>
         Matrix4x4 invertYM;
 
         /// <summary>
-        /// The matrix that inverts the Z axis.
+        /// The matrix that inverts the Z-axis.
         /// </summary>
         Matrix4x4 invertZM;
 
@@ -218,10 +245,11 @@ namespace HoloLensWithOpenCVForUnityExample
         {
             displayCameraPreviewToggle.isOn = displayCameraPreview;
             useStoredCameraParametersToggle.isOn = useStoredCameraParameters;
+            enableLowPassFilterToggle.isOn = enableLowPassFilter;
 
             imageOptimizationHelper = gameObject.GetComponent<ImageOptimizationHelper> ();
             webCamTextureToMatHelper = gameObject.GetComponent<HololensCameraStreamToMatHelper> ();
-            #if NETFX_CORE
+            #if NETFX_CORE && !DISABLE_HOLOLENSCAMSTREAM_API
             webCamTextureToMatHelper.frameMatAcquired += OnFrameMatAcquired;
             #endif
 
@@ -378,7 +406,7 @@ namespace HoloLensWithOpenCVForUnityExample
         {
             Debug.Log ("OnWebCamTextureToMatHelperDisposed");
 
-            #if !NETFX_CORE
+            #if !NETFX_CORE || DISABLE_HOLOLENSCAMSTREAM_API
             StopThread ();
             lock (sync) {
                 ExecuteOnMainThread.Clear ();
@@ -418,7 +446,7 @@ namespace HoloLensWithOpenCVForUnityExample
             Debug.Log ("OnWebCamTextureToMatHelperErrorOccurred " + errorCode);
         }
 
-        #if NETFX_CORE
+        #if NETFX_CORE && !DISABLE_HOLOLENSCAMSTREAM_API
         public void OnFrameMatAcquired (Mat bgraMat, Matrix4x4 projectionMatrix, Matrix4x4 cameraToWorldMatrix)
         {
             downScaleFrameMat = imageOptimizationHelper.GetDownScaleMat (bgraMat);
@@ -438,29 +466,28 @@ namespace HoloLensWithOpenCVForUnityExample
                         //This example can display ARObject on only first detected marker.
                         if (i == 0) {
 
-                            // Position
-                            double[] tvecArr = tvecs.get (i, 0);
+                            // Convert to unity pose data.
+                            double[] rvecArr = new double[3];
+                            rvecs.get (0, 0, rvecArr);
+                            double[] tvecArr = new double[3];
+                            tvecs.get (0, 0, tvecArr);
+                            tvecArr[2] /= imageOptimizationHelper.downscaleRatio;
+                            PoseData poseData = ARUtils.ConvertRvecTvecToPoseData (rvecArr, tvecArr);
 
-                            // Rotation
-                            double[] rvecArr = rvecs.get (i, 0);
-                            Mat rvec = new Mat (3, 1, CvType.CV_64FC1);
-                            rvec.put (0, 0, rvecArr);
-                            Calib3d.Rodrigues (rvec, rotMat);
+                            // Changes in pos/rot below these thresholds are ignored.
+                            if (enableLowPassFilter) {
+                                ARUtils.LowpassPoseData (ref oldPoseData, ref poseData, positionLowPass, rotationLowPass);
+                            }
+                            oldPoseData = poseData;
 
-                            double[] rotMatArr = new double[rotMat.total()];
-                            rotMat.get (0, 0, rotMatArr);
-
-                            transformationM.SetRow (0, new Vector4 ((float)rotMatArr [0], (float)rotMatArr [1], (float)rotMatArr [2], (float)tvecArr [0]));
-                            transformationM.SetRow (1, new Vector4 ((float)rotMatArr [3], (float)rotMatArr [4], (float)rotMatArr [5], (float)tvecArr [1]));
-                            transformationM.SetRow (2, new Vector4 ((float)rotMatArr [6], (float)rotMatArr [7], (float)rotMatArr [8], (float)(tvecArr [2] / imageOptimizationHelper.downscaleRatio)));
-
-                            transformationM.SetRow (3, new Vector4 (0, 0, 0, 1));
+                            // Create transform matrix.
+                            transformationM = Matrix4x4.TRS (poseData.pos, poseData.rot, Vector3.one);
 
                             lock (sync){
                                 // Right-handed coordinates system (OpenCV) to left-handed one (Unity)
                                 ARM = invertYM * transformationM;
 
-                                // Apply Z axis inverted matrix.
+                                // Apply Z-axis inverted matrix.
                                 ARM = ARM * invertZM;
                             }
 
@@ -498,7 +525,7 @@ namespace HoloLensWithOpenCVForUnityExample
 
                 if (!webCamTextureToMatHelper.IsPlaying ()) return;
 
-                if (displayCameraPreview) {
+                if (displayCameraPreview && rgbMat4preview != null) {
                     OpenCVForUnity.Utils.fastMatToTexture2D (rgbMat4preview, texture);
                 }
 
@@ -508,7 +535,8 @@ namespace HoloLensWithOpenCVForUnityExample
 
                         lock (sync){
                             // Apply camera transform matrix.
-                            ARM = arCamera.transform.localToWorldMatrix * ARM;
+                            ARM = cameraToWorldMatrix * invertZM * ARM;
+
                             ARUtils.SetTransformFromMatrix (arGameObject.transform, ref ARM);
                         }
                     }
@@ -598,28 +626,27 @@ namespace HoloLensWithOpenCVForUnityExample
                     //This example can display ARObject on only first detected marker.
                     if (i == 0) {
 
-                        // Position
-                        double[] tvecArr = tvecs.get (i, 0);
+                        // Convert to unity pose data.
+                        double[] rvecArr = new double[3];
+                        rvecs.get (0, 0, rvecArr);
+                        double[] tvecArr = new double[3];
+                        tvecs.get (0, 0, tvecArr);
+                        tvecArr[2] /= imageOptimizationHelper.downscaleRatio;
+                        PoseData poseData = ARUtils.ConvertRvecTvecToPoseData (rvecArr, tvecArr);
 
-                        // Rotation
-                        double[] rvecArr = rvecs.get (i, 0);
-                        Mat rvec = new Mat (3, 1, CvType.CV_64FC1);
-                        rvec.put (0, 0, rvecArr);
-                        Calib3d.Rodrigues (rvec, rotMat);
+                        // Changes in pos/rot below these thresholds are ignored.
+                        if (enableLowPassFilter) {
+                            ARUtils.LowpassPoseData (ref oldPoseData, ref poseData, positionLowPass, rotationLowPass);
+                        }
+                        oldPoseData = poseData;
 
-                        double[] rotMatArr = new double[rotMat.total()];
-                        rotMat.get (0, 0, rotMatArr);
-
-                        transformationM.SetRow (0, new Vector4 ((float)rotMatArr [0], (float)rotMatArr [1], (float)rotMatArr [2], (float)tvecArr [0]));
-                        transformationM.SetRow (1, new Vector4 ((float)rotMatArr [3], (float)rotMatArr [4], (float)rotMatArr [5], (float)tvecArr [1]));
-                        transformationM.SetRow (2, new Vector4 ((float)rotMatArr [6], (float)rotMatArr [7], (float)rotMatArr [8], (float)(tvecArr [2] / imageOptimizationHelper.downscaleRatio)));
-
-                        transformationM.SetRow (3, new Vector4 (0, 0, 0, 1));
+                        // Create transform matrix.
+                        transformationM = Matrix4x4.TRS (poseData.pos, poseData.rot, Vector3.one);
 
                         // Right-handed coordinates system (OpenCV) to left-handed one (Unity)
                         ARM = invertYM * transformationM;
 
-                        // Apply Z axis inverted matrix.
+                        // Apply Z-axis inverted matrix.
                         ARM = ARM * invertZM;
 
                         hasUpdatedARTransformMatrix = true;
@@ -657,8 +684,9 @@ namespace HoloLensWithOpenCVForUnityExample
                 if (hasUpdatedARTransformMatrix) {
                     hasUpdatedARTransformMatrix = false;
 
-                    // Apply camera transform matrix.
-                    ARM = arCamera.transform.localToWorldMatrix * ARM;
+                    // Apply the cameraToWorld matrix with the Z-axis inverted.         
+                    ARM = arCamera.cameraToWorldMatrix * invertZM * ARM;
+
                     ARUtils.SetTransformFromMatrix (arGameObject.transform, ref ARM);
                 }
             }
@@ -673,7 +701,7 @@ namespace HoloLensWithOpenCVForUnityExample
         void OnDestroy ()
         {
             imageOptimizationHelper.Dispose ();
-            #if NETFX_CORE
+            #if NETFX_CORE && !DISABLE_HOLOLENSCAMSTREAM_API
             webCamTextureToMatHelper.frameMatAcquired -= OnFrameMatAcquired;
             #endif
             webCamTextureToMatHelper.Dispose ();
@@ -720,7 +748,7 @@ namespace HoloLensWithOpenCVForUnityExample
         /// </summary>
         public void OnChangeCameraButtonClick ()
         {
-            webCamTextureToMatHelper.Initialize (null, webCamTextureToMatHelper.requestedWidth, webCamTextureToMatHelper.requestedHeight, !webCamTextureToMatHelper.requestedIsFrontFacing);
+            webCamTextureToMatHelper.requestedIsFrontFacing = !webCamTextureToMatHelper.IsFrontFacing ();
         }
 
         /// <summary>
@@ -749,6 +777,18 @@ namespace HoloLensWithOpenCVForUnityExample
 
             if (webCamTextureToMatHelper != null && webCamTextureToMatHelper.IsInitialized ()) {
                 webCamTextureToMatHelper.Initialize ();
+            }
+        }
+
+        /// <summary>
+        /// Raises the enable low pass filter toggle value changed event.
+        /// </summary>
+        public void OnEnableLowPassFilterToggleValueChanged ()
+        {
+            if (enableLowPassFilterToggle.isOn) {
+                enableLowPassFilter = true;
+            } else {
+                enableLowPassFilter = false;
             }
         }
 
