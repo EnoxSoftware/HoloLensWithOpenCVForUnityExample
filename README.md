@@ -2,12 +2,17 @@
 
 
 ## What's new
-Performance of ArUco example improved.
-By using the "HoloLensCameraStream" asset, video capture can now be executed faster.
+* Performance of ArUco example improved.
+* By using the "HoloLensCameraStream" asset, video capture can now be executed faster.
 
 
 ## Demo Video (old version)
 [![](http://img.youtube.com/vi/SdzsedkTpCI/0.jpg)](https://youtu.be/SdzsedkTpCI)
+
+
+## Demo Hololens App
+* [HoloLensWithOpenCVForUnityExample.zip](https://github.com/EnoxSoftware/HoloLensWithOpenCVForUnityExample/releases)
+* Use the Windows Device Portal to install apps on HoloLens. [https://docs.microsoft.com/en-us/hololens/hololens-install-apps](https://docs.microsoft.com/en-us/hololens/hololens-install-apps)
 
 
 ## Environment
