@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.EventSystems;
+using HoloToolkit.Unity.InputModule;
 
 #if UNITY_2017_2_OR_NEWER
 using UnityEngine.XR.WSA.WebCam;
@@ -13,9 +14,6 @@ using UnityEngine.VR.WSA.Input;
 using WSAWebCamCameraParameters = UnityEngine.VR.WSA.WebCam.CameraParameters;
 #endif
 
-#if UNITY_5_3 || UNITY_5_3_OR_NEWER
-using UnityEngine.SceneManagement;
-#endif
 using OpenCVForUnity;
 
 namespace HoloLensWithOpenCVForUnityExample
@@ -25,7 +23,7 @@ namespace HoloLensWithOpenCVForUnityExample
     /// An example of holographic photo blending using the PhotocCapture class on Hololens. (Air Tap to take a picture)
     /// Referring to https://forum.unity3d.com/threads/holographic-photo-blending-with-photocapture.416023/.
     /// </summary>
-    public class HoloLensPhotoCaptureExample:MonoBehaviour
+    public class HoloLensPhotoCaptureExample : ExampleSceneBase
     {
         GestureRecognizer m_GestureRecognizer;
         GameObject m_Canvas = null;
@@ -60,8 +58,10 @@ namespace HoloLensWithOpenCVForUnityExample
         /// </summary>
         Color32[] colors;
 
-        void Start ()
+        protected override void Start ()
         {
+            base.Start ();
+
             m_Canvas = GameObject.Find ("PhotoCaptureCanvas");
             m_CanvasRenderer = m_Canvas.GetComponent<Renderer> () as Renderer;
             m_CanvasRenderer.enabled = false;
@@ -135,8 +135,10 @@ namespace HoloLensWithOpenCVForUnityExample
         void OnTappedEvent (InteractionSourceKind source, int tapCount, Ray headRay)
         #endif
         {
-            if (EventSystem.current.IsPointerOverGameObject ())
+            // Determine if a Gaze pointer is over a GUI.
+            if (GazeManager.Instance.HitObject != null && GazeManager.Instance.HitObject.transform.name == "Text") {
                 return;
+            }
 
             if (m_CapturingPhoto) {
                 return;
@@ -194,11 +196,13 @@ namespace HoloLensWithOpenCVForUnityExample
             m_CanvasRenderer.sharedMaterial.SetTexture ("_MainTex", m_Texture);
             m_CanvasRenderer.sharedMaterial.SetMatrix ("_WorldToCameraMatrix", worldToCameraMatrix);
             m_CanvasRenderer.sharedMaterial.SetMatrix ("_CameraProjectionMatrix", projectionMatrix);
+            m_CanvasRenderer.sharedMaterial.SetVector ("_VignetteOffset", new Vector4(0, 0));
             m_CanvasRenderer.sharedMaterial.SetFloat ("_VignetteScale", 0.0f);
 
             // Position the canvas object slightly in front
             // of the real world web camera.
             Vector3 position = cameraToWorldMatrix.GetColumn (3) - cameraToWorldMatrix.GetColumn (2);
+            position *= 1.2f;
 
             // Rotate the canvas object so that it faces the user.
             Quaternion rotation = Quaternion.LookRotation (-cameraToWorldMatrix.GetColumn (2), cameraToWorldMatrix.GetColumn (1));
@@ -250,11 +254,7 @@ namespace HoloLensWithOpenCVForUnityExample
         /// </summary>
         public void OnBackButtonClick ()
         {
-            #if UNITY_5_3 || UNITY_5_3_OR_NEWER
-            SceneManager.LoadScene ("HoloLensWithOpenCVForUnityExample");
-            #else
-            Application.LoadLevel ("HoloLensWithOpenCVForUnityExample");
-            #endif
+            LoadScene ("HoloLensWithOpenCVForUnityExample");
         }
     }
 }

@@ -2,9 +2,6 @@
 using System.Collections;
 using UnityEngine.UI;
 
-#if UNITY_5_3 || UNITY_5_3_OR_NEWER
-using UnityEngine.SceneManagement;
-#endif
 using OpenCVForUnity;
 
 using System.Linq;
@@ -17,7 +14,7 @@ namespace HoloLensWithOpenCVForUnityExample
     /// Referring to http://dev.classmethod.jp/smartphone/opencv-manga-2/.
     /// </summary>
     [RequireComponent(typeof(HololensCameraStreamToMatHelper))]
-    public class HoloLensComicFilterExample : MonoBehaviour
+    public class HoloLensComicFilterExample : ExampleSceneBase
     {
         /// <summary>
         /// The gray mat.
@@ -71,14 +68,16 @@ namespace HoloLensWithOpenCVForUnityExample
 
         OpenCVForUnity.Rect processingAreaRect;
         public Vector2 outsideClippingRatio = new Vector2(0.17f, 0.19f);
-        public Vector2 clippingOffset = new Vector2(0.043f, -0.041f);
-        public float vignetteScale = 1.8f;
+        public Vector2 clippingOffset = new Vector2(0.043f, -0.025f);
+        public float vignetteScale = 1.5f;
 
         Mat dstMatClippingROI;
 
         // Use this for initialization
-        void Start ()
+        protected override void Start ()
         {
+            base.Start ();
+
             webCamTextureToMatHelper = gameObject.GetComponent<HololensCameraStreamToMatHelper> ();
             #if NETFX_CORE && !DISABLE_HOLOLENSCAMSTREAM_API
             webCamTextureToMatHelper.frameMatAcquired += OnFrameMatAcquired;
@@ -253,8 +252,8 @@ namespace HoloLensWithOpenCVForUnityExample
             Imgproc.cvtColor(dstMat, bgraMat, Imgproc.COLOR_GRAY2BGRA);
 
             //
-            //Imgproc.rectangle (bgraMat, new Point (0, 0), new Point (bgraMat.width (), bgraMat.height ()), new Scalar (0, 0, 255, 255), 2);
-            //Imgproc.rectangle (bgraMat, processingAreaRect.tl(), processingAreaRect.br(), new Scalar (0, 0, 255, 255), 2);
+            //Imgproc.rectangle (bgraMat, new Point (0, 0), new Point (bgraMat.width (), bgraMat.height ()), new Scalar (0, 0, 255, 255), 4);
+            //Imgproc.rectangle (bgraMat, processingAreaRect.tl(), processingAreaRect.br(), new Scalar (0, 0, 255, 255), 4);
             //
 
             bgraMatClipROI.Dispose ();
@@ -274,6 +273,7 @@ namespace HoloLensWithOpenCVForUnityExample
                 // Position the canvas object slightly in front
                 // of the real world web camera.
                 Vector3 position = cameraToWorldMatrix.GetColumn (3) - cameraToWorldMatrix.GetColumn (2);
+                position *= 1.2f;
 
                 // Rotate the canvas object so that it faces the user.
                 Quaternion rotation = Quaternion.LookRotation (-cameraToWorldMatrix.GetColumn (2), cameraToWorldMatrix.GetColumn (1));
@@ -339,8 +339,8 @@ namespace HoloLensWithOpenCVForUnityExample
                 Imgproc.cvtColor(dstMat, rgbaMat, Imgproc.COLOR_GRAY2RGBA);
 
                 //
-                //Imgproc.rectangle (rgbaMat, new Point (0, 0), new Point (rgbaMat.width (), rgbaMat.height ()), new Scalar (255, 0, 0, 255), 2);
-                //Imgproc.rectangle (rgbaMat, processingAreaRect.tl(), processingAreaRect.br(), new Scalar (255, 0, 0, 255), 2);
+                //Imgproc.rectangle (rgbaMat, new Point (0, 0), new Point (rgbaMat.width (), rgbaMat.height ()), new Scalar (255, 0, 0, 255), 4);
+                //Imgproc.rectangle (rgbaMat, processingAreaRect.tl(), processingAreaRect.br(), new Scalar (255, 0, 0, 255), 4);
                 //
 
                 //
@@ -348,6 +348,7 @@ namespace HoloLensWithOpenCVForUnityExample
 
                 rgbaMatClipROI.Dispose ();
             }
+
 
             if (webCamTextureToMatHelper.IsPlaying ()) {
 
@@ -359,6 +360,7 @@ namespace HoloLensWithOpenCVForUnityExample
                 // Position the canvas object slightly in front
                 // of the real world web camera.
                 Vector3 position = cameraToWorldMatrix.GetColumn (3) - cameraToWorldMatrix.GetColumn (2);
+                position *= 1.2f;
 
                 // Rotate the canvas object so that it faces the user.
                 Quaternion rotation = Quaternion.LookRotation (-cameraToWorldMatrix.GetColumn (2), cameraToWorldMatrix.GetColumn (1));
@@ -366,6 +368,7 @@ namespace HoloLensWithOpenCVForUnityExample
                 gameObject.transform.position = position;
                 gameObject.transform.rotation = rotation;
             }
+
         }
         #endif
 
@@ -385,11 +388,7 @@ namespace HoloLensWithOpenCVForUnityExample
         /// </summary>
         public void OnBackButtonClick ()
         {
-            #if UNITY_5_3 || UNITY_5_3_OR_NEWER
-            SceneManager.LoadScene ("HoloLensWithOpenCVForUnityExample");
-            #else
-            Application.LoadLevel ("HoloLensWithOpenCVForUnityExample");
-            #endif
+            LoadScene ("HoloLensWithOpenCVForUnityExample");
         }
 
         /// <summary>

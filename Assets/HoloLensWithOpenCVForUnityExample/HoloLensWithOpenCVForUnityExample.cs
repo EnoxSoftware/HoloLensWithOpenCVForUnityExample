@@ -1,18 +1,14 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-#if UNITY_5_3 || UNITY_5_3_OR_NEWER
-using UnityEngine.SceneManagement;
-#endif
-
 namespace HoloLensWithOpenCVForUnityExample
 {
-    public class HoloLensWithOpenCVForUnityExample : MonoBehaviour
+    public class HoloLensWithOpenCVForUnityExample : ExampleSceneBase
     {
         // Use this for initialization
-        void Start ()
+        protected override void Start ()
         {
-            
+            base.Start ();
         }
         
         // Update is called once per frame
@@ -23,65 +19,37 @@ namespace HoloLensWithOpenCVForUnityExample
 
         public void OnShowLicenseButtonClick ()
         {
-            #if UNITY_5_3 || UNITY_5_3_OR_NEWER
-            SceneManager.LoadScene ("ShowLicense");
-            #else
-            Application.LoadLevel ("ShowLicense");
-            #endif
+            LoadScene ("ShowLicense");
         }
 
         public void OnHoloLensPhotoCaptureExampleButtonClick ()
         {
-            #if UNITY_5_3 || UNITY_5_3_OR_NEWER
-            SceneManager.LoadScene ("HoloLensPhotoCaptureExample");
-            #else
-            Application.LoadLevel ("HoloLensPhotoCaptureExample");
-            #endif
+            LoadScene ("HoloLensPhotoCaptureExample");
         }
 
         public void OnHoloLensComicFilterExampleButtonClick ()
         {
-            #if UNITY_5_3 || UNITY_5_3_OR_NEWER
-            SceneManager.LoadScene ("HoloLensComicFilterExample");
-            #else
-            Application.LoadLevel ("HoloLensComicFilterExample");
-            #endif
+            LoadScene ("HoloLensComicFilterExample");
         }
         
         public void OnHoloLensFaceDetectionExampleButtonClick ()
         {
-            #if UNITY_5_3 || UNITY_5_3_OR_NEWER
-            SceneManager.LoadScene ("HoloLensFaceDetectionExample");
-            #else
-            Application.LoadLevel ("HoloLensFaceDetectionExample");
-            #endif
+            LoadScene ("HoloLensFaceDetectionExample");
         }
 
         public void OnHoloLensFaceDetectionOverlayExampleButtonClick ()
         {
-            #if UNITY_5_3 || UNITY_5_3_OR_NEWER
-            SceneManager.LoadScene ("HoloLensFaceDetectionOverlayExample");
-            #else
-            Application.LoadLevel ("HoloLensFaceDetectionOverlayExample");
-            #endif
+            LoadScene ("HoloLensFaceDetectionOverlayExample");
         }
 
         public void OnHoloLensArUcoExampleButtonClick ()
         {
-            #if UNITY_5_3 || UNITY_5_3_OR_NEWER
-            SceneManager.LoadScene ("HoloLensArUcoExample");
-            #else
-            Application.LoadLevel ("HoloLensArUcoExample");
-            #endif
+            LoadScene ("HoloLensArUcoExample");
         }
 
         public void OnHoloLensArUcoCameraCalibrationExampleButtonClick ()
         {
-            #if UNITY_5_3 || UNITY_5_3_OR_NEWER
-            SceneManager.LoadScene ("HoloLensArUcoCameraCalibrationExample");
-            #else
-            Application.LoadLevel ("HoloLensArUcoCameraCalibrationExample");
-            #endif
+            LoadScene ("HoloLensArUcoCameraCalibrationExample");
         }
     }
 }

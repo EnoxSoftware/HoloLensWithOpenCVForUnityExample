@@ -7,6 +7,7 @@ using System.Xml.Serialization;
 using System.IO;
 using System.Linq;
 using UnityEngine.EventSystems;
+using HoloToolkit.Unity.InputModule;
 
 #if UNITY_2017_2_OR_NEWER
 using UnityEngine.XR.WSA.Input;
@@ -14,9 +15,6 @@ using UnityEngine.XR.WSA.Input;
 using UnityEngine.VR.WSA.Input;
 #endif
 
-#if UNITY_5_3 || UNITY_5_3_OR_NEWER
-using UnityEngine.SceneManagement;
-#endif
 using OpenCVForUnity;
 
 namespace HoloLensWithOpenCVForUnityExample
@@ -30,7 +28,7 @@ namespace HoloLensWithOpenCVForUnityExample
     /// https://docs.opencv.org/3.4.0/d7/d21/tutorial_interactive_calibration.html
     /// </summary>
     [RequireComponent(typeof(HololensCameraStreamToMatHelper))]
-    public class HoloLensArUcoCameraCalibrationExample : MonoBehaviour
+    public class HoloLensArUcoCameraCalibrationExample : ExampleSceneBase
     {
         /// <summary>
         /// The preview quad.
@@ -207,6 +205,10 @@ namespace HoloLensWithOpenCVForUnityExample
         // Use this for initialization
         IEnumerator Start ()
         {
+            camera = FindObjectOfType<HoloToolkit.Unity.InputModule.MixedRealityCameraManager>();
+            cursor = FindObjectOfType<HoloToolkit.Unity.InputModule.Cursor>();
+            input = FindObjectOfType<HoloToolkit.Unity.InputModule.InputManager>();
+
             webCamTextureToMatHelper = gameObject.GetComponent<HololensCameraStreamToMatHelper> ();
 
             // fix the screen orientation.
@@ -897,11 +899,7 @@ namespace HoloLensWithOpenCVForUnityExample
         /// </summary>
         public void OnBackButtonClick ()
         {
-            #if UNITY_5_3 || UNITY_5_3_OR_NEWER
-            SceneManager.LoadScene ("HoloLensWithOpenCVForUnityExample");
-            #else
-            Application.LoadLevel ("HoloLensWithOpenCVForUnityExample");
-            #endif
+            LoadScene ("HoloLensWithOpenCVForUnityExample");
         }
         
         /// <summary>
@@ -1128,8 +1126,10 @@ namespace HoloLensWithOpenCVForUnityExample
         private void OnTappedEvent (InteractionSourceKind source, int tapCount, Ray headRay)
         #endif
         {
-            if (EventSystem.current.IsPointerOverGameObject ())
+            // Determine if a Gaze pointer is over a GUI.
+            if (GazeManager.Instance.HitObject != null && GazeManager.Instance.HitObject.transform.name == "Text") {
                 return;
+            }
 
             OnCaptureButtonClick ();
         }

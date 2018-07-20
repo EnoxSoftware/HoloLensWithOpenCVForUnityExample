@@ -8,9 +8,6 @@ using UnityEngine.EventSystems;
 using System.IO;
 using System.Xml.Serialization;
 
-#if UNITY_5_3 || UNITY_5_3_OR_NEWER
-using UnityEngine.SceneManagement;
-#endif
 using OpenCVForUnity;
 
 namespace HoloLensWithOpenCVForUnityExample
@@ -21,7 +18,7 @@ namespace HoloLensWithOpenCVForUnityExample
     /// Referring to https://github.com/opencv/opencv_contrib/blob/master/modules/aruco/samples/detect_markers.cpp.
     /// </summary>
     [RequireComponent(typeof(HololensCameraStreamToMatHelper))]
-    public class HoloLensArUcoExample : MonoBehaviour
+    public class HoloLensArUcoExample : ExampleSceneBase
     {
         [HeaderAttribute ("Preview")]
 
@@ -241,8 +238,10 @@ namespace HoloLensWithOpenCVForUnityExample
         }
 
         // Use this for initialization
-        void Start ()
+        protected override void Start ()
         {
+            base.Start ();
+
             displayCameraPreviewToggle.isOn = displayCameraPreview;
             useStoredCameraParametersToggle.isOn = useStoredCameraParameters;
             enableLowPassFilterToggle.isOn = enableLowPassFilter;
@@ -712,11 +711,7 @@ namespace HoloLensWithOpenCVForUnityExample
         /// </summary>
         public void OnBackButtonClick ()
         {
-            #if UNITY_5_3 || UNITY_5_3_OR_NEWER
-            SceneManager.LoadScene ("HoloLensWithOpenCVForUnityExample");
-            #else
-            Application.LoadLevel ("HoloLensWithOpenCVForUnityExample");
-            #endif
+            LoadScene ("HoloLensWithOpenCVForUnityExample");
         }
 
         /// <summary>

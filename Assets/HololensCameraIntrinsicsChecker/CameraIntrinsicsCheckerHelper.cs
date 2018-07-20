@@ -69,7 +69,7 @@ namespace HololensCameraIntrinsics
             }
 
             //When building the application for Hololens, uncomment the following line in Visual Studio.
-            /*
+          
             double calculatedFrameRate = (double)property.FrameRate.Numerator / (double)property.FrameRate.Denominator;
 
             String result = "\n" + "=============================================";
@@ -88,7 +88,7 @@ namespace HololensCameraIntrinsics
             {
                 ResultText.text += result;
             }, false);
-            */
+            
 
         }
         #endif

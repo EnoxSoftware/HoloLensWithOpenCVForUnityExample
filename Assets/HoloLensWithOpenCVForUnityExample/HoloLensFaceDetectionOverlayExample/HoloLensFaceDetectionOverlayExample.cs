@@ -6,9 +6,6 @@ using UnityEngine.UI;
 using OpenCVForUnity.RectangleTrack;
 using System.Threading;
 
-#if UNITY_5_3 || UNITY_5_3_OR_NEWER
-using UnityEngine.SceneManagement;
-#endif
 using OpenCVForUnity;
 using Rect = OpenCVForUnity.Rect;
 
@@ -20,7 +17,7 @@ namespace HoloLensWithOpenCVForUnityExample
     /// Referring to https://github.com/Itseez/opencv/blob/master/modules/objdetect/src/detection_based_tracker.cpp.
     /// </summary>
     [RequireComponent(typeof(HololensCameraStreamToMatHelper))]
-    public class HoloLensFaceDetectionOverlayExample : MonoBehaviour
+    public class HoloLensFaceDetectionOverlayExample : ExampleSceneBase
     {
         /// <summary>
         /// Determines if enables the detection.
@@ -45,7 +42,7 @@ namespace HoloLensWithOpenCVForUnityExample
         /// <summary>
         /// The overlay Distance.
         /// </summary>
-        public float overlayDistance = 1;
+        public float overlayDistance = 1.2f;
 
         /// <summary>
         /// The webcam texture to mat helper.
@@ -107,8 +104,10 @@ namespace HoloLensWithOpenCVForUnityExample
         RectOverlay rectOverlay;
 
         // Use this for initialization
-        void Start ()
+        protected override void Start ()
         {
+            base.Start ();
+
             useSeparateDetectionToggle.isOn = useSeparateDetection;
 
             webCamTextureToMatHelper = gameObject.GetComponent<HololensCameraStreamToMatHelper> ();
@@ -550,11 +549,7 @@ namespace HoloLensWithOpenCVForUnityExample
         /// </summary>
         public void OnBackButtonClick ()
         {
-            #if UNITY_5_3 || UNITY_5_3_OR_NEWER
-            SceneManager.LoadScene ("HoloLensWithOpenCVForUnityExample");
-            #else
-            Application.LoadLevel ("HoloLensWithOpenCVForUnityExample");
-            #endif
+            LoadScene ("HoloLensWithOpenCVForUnityExample");
         }
 
         /// <summary>

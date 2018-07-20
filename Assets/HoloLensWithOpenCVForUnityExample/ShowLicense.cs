@@ -1,18 +1,14 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-#if UNITY_5_3 || UNITY_5_3_OR_NEWER
-using UnityEngine.SceneManagement;
-#endif
-
 namespace HoloLensWithOpenCVForUnityExample
 {
-    public class ShowLicense : MonoBehaviour
+    public class ShowLicense : ExampleSceneBase
     {
         // Use this for initialization
-        void Start ()
+        protected override void Start ()
         {
-            
+            base.Start ();
         }
         
         // Update is called once per frame
@@ -26,11 +22,7 @@ namespace HoloLensWithOpenCVForUnityExample
         /// </summary>
         public void OnBackButtonClick ()
         {
-            #if UNITY_5_3 || UNITY_5_3_OR_NEWER
-            SceneManager.LoadScene ("HoloLensWithOpenCVForUnityExample");
-            #else
-            Application.LoadLevel ("HoloLensWithOpenCVForUnityExample");
-            #endif
+            LoadScene ("HoloLensWithOpenCVForUnityExample");
         }
     }
 }

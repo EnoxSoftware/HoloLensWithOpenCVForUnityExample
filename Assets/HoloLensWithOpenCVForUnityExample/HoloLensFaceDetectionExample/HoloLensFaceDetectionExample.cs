@@ -6,9 +6,6 @@ using UnityEngine.UI;
 using OpenCVForUnity.RectangleTrack;
 using System.Threading;
 
-#if UNITY_5_3 || UNITY_5_3_OR_NEWER
-using UnityEngine.SceneManagement;
-#endif
 using OpenCVForUnity;
 using Rect = OpenCVForUnity.Rect;
 
@@ -20,7 +17,7 @@ namespace HoloLensWithOpenCVForUnityExample
     /// Referring to https://github.com/Itseez/opencv/blob/master/modules/objdetect/src/detection_based_tracker.cpp.
     /// </summary>
     [RequireComponent(typeof(HololensCameraStreamToMatHelper))]
-    public class HoloLensFaceDetectionExample : MonoBehaviour
+    public class HoloLensFaceDetectionExample : ExampleSceneBase
     {
         /// <summary>
         /// Determines if enables the detection.
@@ -119,8 +116,10 @@ namespace HoloLensWithOpenCVForUnityExample
         }
 
         // Use this for initialization
-        void Start ()
+        protected override void Start ()
         {
+            base.Start ();
+
             useSeparateDetectionToggle.isOn = useSeparateDetection;
             displayCameraImageToggle.isOn = displayCameraImage;
 
@@ -369,6 +368,7 @@ namespace HoloLensWithOpenCVForUnityExample
                 // Position the canvas object slightly in front
                 // of the real world web camera.
                 Vector3 position = cameraToWorldMatrix.GetColumn (3) - cameraToWorldMatrix.GetColumn (2);
+                position *= 1.2f;
 
                 // Rotate the canvas object so that it faces the user.
                 Quaternion rotation = Quaternion.LookRotation (-cameraToWorldMatrix.GetColumn (2), cameraToWorldMatrix.GetColumn (1));
@@ -481,6 +481,7 @@ namespace HoloLensWithOpenCVForUnityExample
                 // Position the canvas object slightly in front
                 // of the real world web camera.
                 Vector3 position = cameraToWorldMatrix.GetColumn (3) - cameraToWorldMatrix.GetColumn (2);
+                position *= 1.2f;
 
                 // Rotate the canvas object so that it faces the user.
                 Quaternion rotation = Quaternion.LookRotation (-cameraToWorldMatrix.GetColumn (2), cameraToWorldMatrix.GetColumn (1));
@@ -597,11 +598,7 @@ namespace HoloLensWithOpenCVForUnityExample
         /// </summary>
         public void OnBackButtonClick ()
         {
-            #if UNITY_5_3 || UNITY_5_3_OR_NEWER
-            SceneManager.LoadScene ("HoloLensWithOpenCVForUnityExample");
-            #else
-            Application.LoadLevel ("HoloLensWithOpenCVForUnityExample");
-            #endif
+            LoadScene ("HoloLensWithOpenCVForUnityExample");
         }
 
         /// <summary>

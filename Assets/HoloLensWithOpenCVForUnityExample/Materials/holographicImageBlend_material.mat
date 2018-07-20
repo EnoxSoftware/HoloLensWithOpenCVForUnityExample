@@ -23,7 +23,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Floats:
-    - _VignetteScale: 1.8
+    - _VignetteScale: 1.5
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _VignetteOffset: {r: 0.043, g: -0.041, b: 0, a: 0}
+    - _VignetteOffset: {r: 0.043, g: -0.025, b: 0, a: 0}
