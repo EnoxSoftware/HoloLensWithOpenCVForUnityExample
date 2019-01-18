@@ -1,6 +1,6 @@
 ﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
 
-Shader "AR/HolographicImageBlend"
+Shader "AR/HolographicImageBlendShader"
 {
     // Referring to https://forum.unity3d.com/threads/holographic-photo-blending-with-photocapture.416023/.
 

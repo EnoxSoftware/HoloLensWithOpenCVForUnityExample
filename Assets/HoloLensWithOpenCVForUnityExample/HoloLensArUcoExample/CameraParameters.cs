@@ -1,6 +1,5 @@
-﻿using UnityEngine;
-using System;
-using OpenCVForUnity;
+﻿using System;
+using OpenCVForUnity.CoreModule;
 
 namespace HoloLensWithOpenCVForUnityExample
 {

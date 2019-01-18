@@ -1,13 +1,16 @@
-﻿using UnityEngine;
-using System;
-using System.Collections;
+﻿using System;
 using System.Collections.Generic;
+using System.Threading;
+using UnityEngine;
 using UnityEngine.UI;
 using OpenCVForUnity.RectangleTrack;
-using System.Threading;
-
-using OpenCVForUnity;
-using Rect = OpenCVForUnity.Rect;
+using OpenCVForUnity.CoreModule;
+using OpenCVForUnity.ObjdetectModule;
+using OpenCVForUnity.UnityUtils;
+using OpenCVForUnity.UnityUtils.Helper;
+using OpenCVForUnity.ImgprocModule;
+using Rect = OpenCVForUnity.CoreModule.Rect;
+using HoloLensWithOpenCVForUnity.UnityUtils.Helper;
 
 namespace HoloLensWithOpenCVForUnityExample
 {
@@ -124,7 +127,7 @@ namespace HoloLensWithOpenCVForUnityExample
             displayCameraImageToggle.isOn = displayCameraImage;
 
             webCamTextureToMatHelper = gameObject.GetComponent<HololensCameraStreamToMatHelper> ();
-            #if NETFX_CORE && !DISABLE_HOLOLENSCAMSTREAM_API
+            #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
             webCamTextureToMatHelper.frameMatAcquired += OnFrameMatAcquired;
             #endif
             webCamTextureToMatHelper.Initialize ();
@@ -141,7 +144,7 @@ namespace HoloLensWithOpenCVForUnityExample
 
             Mat webCamTextureMat = webCamTextureToMatHelper.GetMat ();
 
-            #if NETFX_CORE && !DISABLE_HOLOLENSCAMSTREAM_API
+            #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
             // HololensCameraStream always returns image data in BGRA format.
             texture = new Texture2D (webCamTextureMat.cols (), webCamTextureMat.rows (), TextureFormat.BGRA32, false);
             #else
@@ -157,7 +160,7 @@ namespace HoloLensWithOpenCVForUnityExample
             quad_renderer.sharedMaterial.SetVector ("_VignetteOffset", new Vector4(0, 0));
 
             Matrix4x4 projectionMatrix;
-            #if NETFX_CORE && !DISABLE_HOLOLENSCAMSTREAM_API
+            #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
             projectionMatrix = webCamTextureToMatHelper.GetProjectionMatrix ();
             quad_renderer.sharedMaterial.SetMatrix ("_CameraProjectionMatrix", projectionMatrix);
             #else
@@ -216,7 +219,7 @@ namespace HoloLensWithOpenCVForUnityExample
             Debug.Log ("OnWebCamTextureToMatHelperDisposed");
 
             StopThread ();
-            lock (sync) {
+            lock (ExecuteOnMainThread) {
                 ExecuteOnMainThread.Clear ();
             }
             hasUpdatedDetectionResult = false;
@@ -245,7 +248,7 @@ namespace HoloLensWithOpenCVForUnityExample
             Debug.Log ("OnWebCamTextureToMatHelperErrorOccurred " + errorCode);
         }
 
-        #if NETFX_CORE && !DISABLE_HOLOLENSCAMSTREAM_API
+        #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
         public void OnFrameMatAcquired (Mat bgraMat, Matrix4x4 projectionMatrix, Matrix4x4 cameraToWorldMatrix)
         {
             Imgproc.cvtColor (bgraMat, grayMat, Imgproc.COLOR_BGRA2GRAY);
@@ -353,8 +356,7 @@ namespace HoloLensWithOpenCVForUnityExample
                 }
             }
 
-
-            UnityEngine.WSA.Application.InvokeOnAppThread(() => {
+            Enqueue(() => {
 
                 if (!webCamTextureToMatHelper.IsPlaying ()) return;
 
@@ -376,7 +378,26 @@ namespace HoloLensWithOpenCVForUnityExample
                 gameObject.transform.position = position;
                 gameObject.transform.rotation = rotation;
 
-            }, false);
+            });
+        }
+
+        private void Update()
+        {
+            lock (ExecuteOnMainThread)
+            {
+                while (ExecuteOnMainThread.Count > 0)
+                {
+                    ExecuteOnMainThread.Dequeue().Invoke();
+                }
+            }
+        }
+
+        private void Enqueue(Action action)
+        {
+            lock (ExecuteOnMainThread)
+            {
+                ExecuteOnMainThread.Enqueue(action);
+            }
         }
 
         #else
@@ -384,7 +405,7 @@ namespace HoloLensWithOpenCVForUnityExample
         // Update is called once per frame
         void Update ()
         {
-            lock (sync) {
+            lock (ExecuteOnMainThread) {
                 while (ExecuteOnMainThread.Count > 0) {
                     ExecuteOnMainThread.Dequeue ().Invoke ();
                 }
@@ -494,12 +515,10 @@ namespace HoloLensWithOpenCVForUnityExample
 
         private void StartThread(Action action)
         {
-            #if UNITY_METRO && NETFX_CORE
+            #if WINDOWS_UWP || (!UNITY_WSA_10_0 && (NET_4_6 || NET_STANDARD_2_0))
             System.Threading.Tasks.Task.Run(() => action());
-            #elif UNITY_METRO
-            action.BeginInvoke(ar => action.EndInvoke(ar), null);
             #else
-            ThreadPool.QueueUserWorkItem (_ => action());
+            ThreadPool.QueueUserWorkItem(_ => action());
             #endif
         }
 
@@ -519,7 +538,7 @@ namespace HoloLensWithOpenCVForUnityExample
 
             DetectObject ();
 
-            lock (sync) {
+            lock (ExecuteOnMainThread) {
                 if (ExecuteOnMainThread.Count == 0) {
                     ExecuteOnMainThread.Enqueue (() => {
                         OnDetectionDone ();
@@ -584,7 +603,7 @@ namespace HoloLensWithOpenCVForUnityExample
         /// </summary>
         void OnDestroy ()
         {
-            #if NETFX_CORE && !DISABLE_HOLOLENSCAMSTREAM_API
+            #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
             webCamTextureToMatHelper.frameMatAcquired -= OnFrameMatAcquired;
             #endif
             webCamTextureToMatHelper.Dispose ();
@@ -630,7 +649,7 @@ namespace HoloLensWithOpenCVForUnityExample
         /// </summary>
         public void OnChangeCameraButtonClick ()
         {
-            webCamTextureToMatHelper.Initialize (null, webCamTextureToMatHelper.requestedWidth, webCamTextureToMatHelper.requestedHeight, !webCamTextureToMatHelper.requestedIsFrontFacing);
+            webCamTextureToMatHelper.requestedIsFrontFacing = !webCamTextureToMatHelper.IsFrontFacing();
         }
 
         /// <summary>

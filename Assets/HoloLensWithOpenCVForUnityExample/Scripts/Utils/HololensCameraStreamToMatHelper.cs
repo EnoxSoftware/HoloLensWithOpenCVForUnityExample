@@ -1,15 +1,16 @@
 ﻿#pragma warning disable 0067
 #if !DISABLE_HOLOLENSCAMSTREAM_API
 using HoloLensCameraStream;
+using OpenCVForUnity.UnityUtils;
 #endif
-using OpenCVForUnity;
+using OpenCVForUnity.CoreModule;
+using OpenCVForUnity.UnityUtils.Helper;
 using System;
 using System.Collections;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.Events;
 
-namespace HoloLensWithOpenCVForUnityExample
+namespace HoloLensWithOpenCVForUnity.UnityUtils.Helper
 {
     /// <summary>
     /// This is called every time there is a new frame image mat available.
@@ -22,7 +23,7 @@ namespace HoloLensWithOpenCVForUnityExample
 
     /// <summary>
     /// Hololens camera stream to mat helper.
-    /// v 1.0.3
+    /// v 1.0.4
     /// 
     /// Combination of camera frame size and frame rate that can be acquired on Hololens. (width x height : framerate)
     /// 1280 x 720 : 30
@@ -59,7 +60,7 @@ namespace HoloLensWithOpenCVForUnityExample
         /// </summary>
         public virtual event FrameMatAcquiredCallback frameMatAcquired;
 
-        #if NETFX_CORE && !DISABLE_HOLOLENSCAMSTREAM_API
+        #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
         public override float requestedFPS {
             get { return _requestedFPS; } 
             set {
@@ -182,7 +183,7 @@ namespace HoloLensWithOpenCVForUnityExample
             if (hasInitEventCompleted && frameMatAcquired != null)
             {
                 Mat mat = new Mat (cameraParams.cameraResolutionHeight, cameraParams.cameraResolutionWidth, CvType.CV_8UC4);
-                OpenCVForUnity.Utils.copyToMat<byte> (latestImageBytes, mat);
+                Utils.copyToMat<byte> (latestImageBytes, mat);
 
                 if (_rotate90Degree) {
                     Mat rotatedFrameMat = new Mat (cameraParams.cameraResolutionWidth, cameraParams.cameraResolutionHeight, CvType.CV_8UC4);
@@ -226,14 +227,14 @@ namespace HoloLensWithOpenCVForUnityExample
         /// <returns>The video capture.</returns>
         public virtual HoloLensCameraStream.VideoCapture GetVideoCapture ()
         {
-            #if NETFX_CORE && !DISABLE_HOLOLENSCAMSTREAM_API
+            #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
             return videoCapture;
             #else
             return null;
             #endif
         }
 
-        #if NETFX_CORE && !DISABLE_HOLOLENSCAMSTREAM_API
+#if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
         // Update is called once per frame
         protected override void Update () {}
 
@@ -302,11 +303,11 @@ namespace HoloLensWithOpenCVForUnityExample
             } else {                
 
                 //Fetch a pointer to Unity's spatial coordinate system if you need pixel mapping
-                #if UNITY_2017_2_OR_NEWER
+#if UNITY_2017_2_OR_NEWER
                 spatialCoordinateSystemPtr = UnityEngine.XR.WSA.WorldManager.GetNativeISpatialCoordinateSystemPtr ();
-                #else
+#else
                 spatialCoordinateSystemPtr = UnityEngine.VR.WSA.WorldManager.GetNativeISpatialCoordinateSystemPtr ();
-                #endif
+#endif
 
                 HoloLensCameraStream.VideoCapture.CreateAync (videoCapture => {
 
@@ -367,11 +368,11 @@ namespace HoloLensWithOpenCVForUnityExample
                     if (colors == null || colors.Length != cameraParams.cameraResolutionWidth * cameraParams.cameraResolutionHeight)
                         colors = new Color32[cameraParams.cameraResolutionWidth * cameraParams.cameraResolutionHeight];
 
-                    frameMat = new Mat (cameraParams.cameraResolutionHeight, cameraParams.cameraResolutionWidth, CvType.CV_8UC4);
+                    frameMat = new Mat (cameraParams.cameraResolutionHeight, cameraParams.cameraResolutionWidth, CvType.CV_8UC4, new Scalar (0, 0, 0, 255));
                     screenOrientation = Screen.orientation;
 
                     if (_rotate90Degree) {
-                        rotatedFrameMat = new Mat (cameraParams.cameraResolutionWidth, cameraParams.cameraResolutionHeight, CvType.CV_8UC4);
+                        rotatedFrameMat = new Mat (cameraParams.cameraResolutionWidth, cameraParams.cameraResolutionHeight, CvType.CV_8UC4, new Scalar (0, 0, 0, 255));
                     }
 
                     isInitWaiting = false;
@@ -575,7 +576,7 @@ namespace HoloLensWithOpenCVForUnityExample
                 }
             }
 
-            OpenCVForUnity.Utils.copyToMat<byte> (latestImageBytes, frameMat);
+            Utils.copyToMat<byte> (latestImageBytes, frameMat);
 
             if (rotatedFrameMat != null) {
 
@@ -707,6 +708,6 @@ namespace HoloLensWithOpenCVForUnityExample
                 isChangeVideoModeWaiting = false;
             });
         }
-        #endif
+#endif
     }
 }

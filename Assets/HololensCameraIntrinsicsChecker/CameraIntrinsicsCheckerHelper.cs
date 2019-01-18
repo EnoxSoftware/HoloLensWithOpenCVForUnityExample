@@ -1,12 +1,5 @@
 ﻿/*
- * If we are building a HoloLens application using Unity, trying to use  System.Numerics.Vectors (.NET 4.6.1) will cause problems.
- * "Reference rewriter: Error: method System.Numerics.Vector2 Windows.Media.Devices.Core.CameraIntrinsics::get_FocalLength() doesn't exist in target framework "
- * I assume this is because the WinRT / UWP / WSA target in Unity does not use .Net 4.6.1 yet.
- * The workaround for now was to comment out the code in the script for Unity build and then to uncomment in VS when it's actually build for the HL.
- * (need to enable "Unity C # Projects" of the build setting  in Unity Editor)
- * See https://forums.hololens.com/discussion/7032/using-net-4-6-features-not-supported-by-unity-wsa-build.
- * 
- * In order to make this script work, it is necessary to uncomment from line 73 to line 90.
+ * Hololens Camera Intrinsics Checker Helper
 */
 
 using UnityEngine;
@@ -16,7 +9,7 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine.UI;
 
-#if NETFX_CORE
+#if WINDOWS_UWP
 using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
 using Windows.Foundation;
@@ -32,7 +25,7 @@ namespace HololensCameraIntrinsics
     {
         public Text ResultText;
 
-        #if NETFX_CORE
+        #if WINDOWS_UWP
         CameraIntrinsicsChecker cameraIntrinsicsChecker;
 
         // Use this for initialization
@@ -68,8 +61,7 @@ namespace HololensCameraIntrinsics
                 return;
             }
 
-            //When building the application for Hololens, uncomment the following line in Visual Studio.
-          
+
             double calculatedFrameRate = (double)property.FrameRate.Numerator / (double)property.FrameRate.Denominator;
 
             String result = "\n" + "=============================================";
@@ -94,7 +86,7 @@ namespace HololensCameraIntrinsics
         #endif
     }
 
-    #if NETFX_CORE
+    #if WINDOWS_UWP
     public class CameraIntrinsicsChecker
     {
         public delegate void OnVideoCaptureResourceCreatedCallback(CameraIntrinsicsChecker chakerObject);

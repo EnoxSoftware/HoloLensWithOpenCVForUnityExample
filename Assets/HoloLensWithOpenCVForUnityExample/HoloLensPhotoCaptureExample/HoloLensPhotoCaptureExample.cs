@@ -1,8 +1,11 @@
 ﻿using UnityEngine;
-using System.Collections;
+using UnityEngine.UI;
 using System.Collections.Generic;
-using UnityEngine.EventSystems;
 using HoloToolkit.Unity.InputModule;
+using OpenCVForUnity.CoreModule;
+using OpenCVForUnity.ObjdetectModule;
+using OpenCVForUnity.UnityUtils;
+using OpenCVForUnity.ImgprocModule;
 
 #if UNITY_2017_2_OR_NEWER
 using UnityEngine.XR.WSA.WebCam;
@@ -14,7 +17,6 @@ using UnityEngine.VR.WSA.Input;
 using WSAWebCamCameraParameters = UnityEngine.VR.WSA.WebCam.CameraParameters;
 #endif
 
-using OpenCVForUnity;
 
 namespace HoloLensWithOpenCVForUnityExample
 {
@@ -136,7 +138,9 @@ namespace HoloLensWithOpenCVForUnityExample
         #endif
         {
             // Determine if a Gaze pointer is over a GUI.
-            if (GazeManager.Instance.HitObject != null && GazeManager.Instance.HitObject.transform.name == "Text") {
+            if (GazeManager.Instance.HitObject != null && (GazeManager.Instance.HitObject.GetComponent<Button>() != null || GazeManager.Instance.HitObject.GetComponent<Toggle>() != null
+                 || GazeManager.Instance.HitObject.GetComponent<Text>() != null || GazeManager.Instance.HitObject.GetComponent<Image>() != null))
+            {
                 return;
             }
 
@@ -179,13 +183,13 @@ namespace HoloLensWithOpenCVForUnityExample
                 cascade.detectMultiScale (grayMat, faces, 1.1, 2, 2, // TODO: objdetect.CV_HAAR_SCALE_IMAGE
                     new Size (grayMat.cols () * 0.05, grayMat.rows () * 0.05), new Size ());
 
-            OpenCVForUnity.Rect[] rects = faces.toArray ();
+            OpenCVForUnity.CoreModule.Rect[] rects = faces.toArray ();
             for (int i = 0; i < rects.Length; i++) {
                 //Debug.Log ("detect faces " + rects [i]);
                 Imgproc.rectangle (rgbaMat, new Point (rects [i].x, rects [i].y), new Point (rects [i].x + rects [i].width, rects [i].y + rects [i].height), new Scalar (255, 0, 0, 255), 2);
             }
 
-            Imgproc.putText (rgbaMat, "W:" + rgbaMat.width () + " H:" + rgbaMat.height () + " SO:" + Screen.orientation, new Point (5, rgbaMat.rows () - 10), Core.FONT_HERSHEY_SIMPLEX, 1.5, new Scalar (0, 255, 0, 255), 2, Imgproc.LINE_AA, false);
+            Imgproc.putText (rgbaMat, "W:" + rgbaMat.width () + " H:" + rgbaMat.height () + " SO:" + Screen.orientation, new Point (5, rgbaMat.rows () - 10), Imgproc.FONT_HERSHEY_SIMPLEX, 1.5, new Scalar (0, 255, 0, 255), 2, Imgproc.LINE_AA, false);
 
             Utils.matToTexture2D (rgbaMat, m_Texture, colors);
 

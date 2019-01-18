@@ -1,14 +1,19 @@
 ﻿using UnityEngine;
-using System.Collections;
-using System.Collections.Generic;
-using System;
-using System.Threading;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using System;
+using System.Collections.Generic;
+using System.Threading;
 using System.IO;
 using System.Xml.Serialization;
-
-using OpenCVForUnity;
+using HoloToolkit.Unity.InputModule;
+using OpenCVForUnity.ArucoModule;
+using OpenCVForUnity.CoreModule;
+using OpenCVForUnity.UnityUtils.Helper;
+using OpenCVForUnity.Calib3dModule;
+using OpenCVForUnity.ImgprocModule;
+using OpenCVForUnity.UnityUtils;
+using HoloLensWithOpenCVForUnity.UnityUtils.Helper;
 
 namespace HoloLensWithOpenCVForUnityExample
 {
@@ -248,7 +253,7 @@ namespace HoloLensWithOpenCVForUnityExample
 
             imageOptimizationHelper = gameObject.GetComponent<ImageOptimizationHelper> ();
             webCamTextureToMatHelper = gameObject.GetComponent<HololensCameraStreamToMatHelper> ();
-            #if NETFX_CORE && !DISABLE_HOLOLENSCAMSTREAM_API
+            #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
             webCamTextureToMatHelper.frameMatAcquired += OnFrameMatAcquired;
             #endif
 
@@ -405,9 +410,9 @@ namespace HoloLensWithOpenCVForUnityExample
         {
             Debug.Log ("OnWebCamTextureToMatHelperDisposed");
 
-            #if !NETFX_CORE || DISABLE_HOLOLENSCAMSTREAM_API
-            StopThread ();
-            lock (sync) {
+            #if !WINDOWS_UWP || DISABLE_HOLOLENSCAMSTREAM_API
+            StopThread();
+            lock (ExecuteOnMainThread) {
                 ExecuteOnMainThread.Clear ();
             }
             isDetecting = false;
@@ -445,7 +450,7 @@ namespace HoloLensWithOpenCVForUnityExample
             Debug.Log ("OnWebCamTextureToMatHelperErrorOccurred " + errorCode);
         }
 
-        #if NETFX_CORE && !DISABLE_HOLOLENSCAMSTREAM_API
+        #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
         public void OnFrameMatAcquired (Mat bgraMat, Matrix4x4 projectionMatrix, Matrix4x4 cameraToWorldMatrix)
         {
             downScaleFrameMat = imageOptimizationHelper.GetDownScaleMat (bgraMat);
@@ -508,8 +513,8 @@ namespace HoloLensWithOpenCVForUnityExample
 
                     if (applyEstimationPose) {
                         for (int i = 0; i < ids.total (); i++) {
-                            using (Mat rvec = new Mat (rvecs, new OpenCVForUnity.Rect (0, i, 1, 1)))
-                            using (Mat tvec = new Mat (tvecs, new OpenCVForUnity.Rect (0, i, 1, 1))) {
+                            using (Mat rvec = new Mat (rvecs, new OpenCVForUnity.CoreModule.Rect(0, i, 1, 1)))
+                            using (Mat tvec = new Mat (tvecs, new OpenCVForUnity.CoreModule.Rect(0, i, 1, 1))) {
 
                                 // In this example we are processing with RGB color image, so Axis-color correspondences are X: blue, Y: green, Z: red. (Usually X: red, Y: green, Z: blue)
                                 Aruco.drawAxis (rgbMat4preview, camMatrix, distCoeffs, rvec, tvec, markerLength * 0.5f);
@@ -519,13 +524,12 @@ namespace HoloLensWithOpenCVForUnityExample
                 }
             }
 
-
-            UnityEngine.WSA.Application.InvokeOnAppThread(() => {
+            Enqueue(() => {
 
                 if (!webCamTextureToMatHelper.IsPlaying ()) return;
 
                 if (displayCameraPreview && rgbMat4preview != null) {
-                    OpenCVForUnity.Utils.fastMatToTexture2D (rgbMat4preview, texture);
+                    Utils.fastMatToTexture2D (rgbMat4preview, texture);
                 }
 
                 if (applyEstimationPose) {
@@ -546,7 +550,26 @@ namespace HoloLensWithOpenCVForUnityExample
                     rgbMat4preview.Dispose();
                 }
 
-            }, false);
+            });
+        }
+
+        private void Update()
+        {
+            lock (ExecuteOnMainThread)
+            {
+                while (ExecuteOnMainThread.Count > 0)
+                {
+                    ExecuteOnMainThread.Dequeue().Invoke();
+                }
+            }
+        }
+
+        private void Enqueue(Action action)
+        {
+            lock (ExecuteOnMainThread)
+            {
+                ExecuteOnMainThread.Enqueue(action);
+            }
         }
 
         #else
@@ -554,7 +577,7 @@ namespace HoloLensWithOpenCVForUnityExample
         // Update is called once per frame
         void Update ()
         {
-            lock (sync) {
+            lock (ExecuteOnMainThread) {
                 while (ExecuteOnMainThread.Count > 0) {
                     ExecuteOnMainThread.Dequeue ().Invoke ();
                 }
@@ -574,12 +597,10 @@ namespace HoloLensWithOpenCVForUnityExample
 
         private void StartThread(Action action)
         {
-            #if UNITY_METRO && NETFX_CORE
+            #if WINDOWS_UWP || (!UNITY_WSA_10_0 && (NET_4_6 || NET_STANDARD_2_0))
             System.Threading.Tasks.Task.Run(() => action());
-            #elif UNITY_METRO
-            action.BeginInvoke(ar => action.EndInvoke(ar), null);
             #else
-            ThreadPool.QueueUserWorkItem (_ => action());
+            ThreadPool.QueueUserWorkItem(_ => action());
             #endif
         }
 
@@ -599,7 +620,7 @@ namespace HoloLensWithOpenCVForUnityExample
 
             DetectARUcoMarker ();
 
-            lock (sync) {
+            lock (ExecuteOnMainThread) {
                 if (ExecuteOnMainThread.Count == 0) {
                     ExecuteOnMainThread.Enqueue (() => {
                         OnDetectionDone ();
@@ -666,8 +687,8 @@ namespace HoloLensWithOpenCVForUnityExample
 
                     if (applyEstimationPose) {
                         for (int i = 0; i < ids.total (); i++) {
-                            using (Mat rvec = new Mat (rvecs, new OpenCVForUnity.Rect (0, i, 1, 1)))
-                            using (Mat tvec = new Mat (tvecs, new OpenCVForUnity.Rect (0, i, 1, 1))) {
+                            using (Mat rvec = new Mat (rvecs, new OpenCVForUnity.CoreModule.Rect(0, i, 1, 1)))
+                            using (Mat tvec = new Mat (tvecs, new OpenCVForUnity.CoreModule.Rect(0, i, 1, 1))) {
 
                                 // In this example we are processing with RGB color image, so Axis-color correspondences are X: blue, Y: green, Z: red. (Usually X: red, Y: green, Z: blue)
                                 Aruco.drawAxis (rgbMat4preview, camMatrix, distCoeffs, rvec, tvec, markerLength * 0.5f);
@@ -676,7 +697,7 @@ namespace HoloLensWithOpenCVForUnityExample
                     }
                 }
 
-                OpenCVForUnity.Utils.fastMatToTexture2D (rgbMat4preview, texture);
+                Utils.fastMatToTexture2D (rgbMat4preview, texture);
             }
 
             if (applyEstimationPose) {
@@ -700,7 +721,7 @@ namespace HoloLensWithOpenCVForUnityExample
         void OnDestroy ()
         {
             imageOptimizationHelper.Dispose ();
-            #if NETFX_CORE && !DISABLE_HOLOLENSCAMSTREAM_API
+            #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
             webCamTextureToMatHelper.frameMatAcquired -= OnFrameMatAcquired;
             #endif
             webCamTextureToMatHelper.Dispose ();
@@ -792,8 +813,12 @@ namespace HoloLensWithOpenCVForUnityExample
         /// </summary>
         public void OnTapped ()
         {
-            if (EventSystem.current.IsPointerOverGameObject ())
+            // Determine if a Gaze pointer is over a GUI.
+            if (GazeManager.Instance.HitObject != null && (GazeManager.Instance.HitObject.GetComponent<Button>() != null || GazeManager.Instance.HitObject.GetComponent<Toggle>() != null
+                 || GazeManager.Instance.HitObject.GetComponent<Text>() != null || GazeManager.Instance.HitObject.GetComponent<Image>() != null))
+            {
                 return;
+            }            
 
             if (applyEstimationPose) {
                 applyEstimationPose = false;

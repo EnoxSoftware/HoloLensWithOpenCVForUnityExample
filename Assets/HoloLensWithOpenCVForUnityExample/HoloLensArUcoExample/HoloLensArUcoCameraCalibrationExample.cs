@@ -1,13 +1,20 @@
 using UnityEngine;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine.UI;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Xml.Serialization;
 using System.IO;
 using System.Linq;
-using UnityEngine.EventSystems;
 using HoloToolkit.Unity.InputModule;
+using OpenCVForUnity.CoreModule;
+using OpenCVForUnity.ArucoModule;
+using OpenCVForUnity.UnityUtils.Helper;
+using OpenCVForUnity.ImgprocModule;
+using OpenCVForUnity.UnityUtils;
+using OpenCVForUnity.Calib3dModule;
+using OpenCVForUnity.ImgcodecsModule;
+using HoloLensWithOpenCVForUnity.UnityUtils.Helper;
 
 #if UNITY_2017_2_OR_NEWER
 using UnityEngine.XR.WSA.Input;
@@ -15,7 +22,6 @@ using UnityEngine.XR.WSA.Input;
 using UnityEngine.VR.WSA.Input;
 #endif
 
-using OpenCVForUnity;
 
 namespace HoloLensWithOpenCVForUnityExample
 {
@@ -203,7 +209,7 @@ namespace HoloLensWithOpenCVForUnityExample
         bool isCalibrating = false;
 
         // Use this for initialization
-        IEnumerator Start ()
+        new IEnumerator Start ()
         {
             camera = FindObjectOfType<HoloToolkit.Unity.InputModule.MixedRealityCameraManager>();
             cursor = FindObjectOfType<HoloToolkit.Unity.InputModule.Cursor>();
@@ -481,7 +487,7 @@ namespace HoloLensWithOpenCVForUnityExample
             double[] distCoeffsArr = new double[(int)distCoeffs.total ()];
             distCoeffs.get (0, 0, distCoeffsArr);
 
-            int ff = Core.FONT_HERSHEY_SIMPLEX;
+            int ff = Imgproc.FONT_HERSHEY_SIMPLEX;
             double fs = 0.4;
             Scalar c = new Scalar (255, 255, 255, 255);
             int t = 0;
@@ -504,7 +510,7 @@ namespace HoloLensWithOpenCVForUnityExample
             Imgproc.putText (bgrMat, "AVG_REPROJECTION_ERROR: " + repErr, new Point (bgrMat.cols() - 300, 300), ff, fs, c, t, lt, blo);
 
             if (frameCount == 0)
-                Imgproc.putText (bgrMat, "To calibration start, please press the calibration button or do air tap gesture!", new Point (5, bgrMat.rows () - 10), Core.FONT_HERSHEY_SIMPLEX, 0.5, new Scalar (255, 255, 255, 255), 1, Imgproc.LINE_AA, false);
+                Imgproc.putText (bgrMat, "To calibration start, please press the calibration button or do air tap gesture!", new Point (5, bgrMat.rows () - 10), Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, new Scalar (255, 255, 255, 255), 1, Imgproc.LINE_AA, false);
         }
 
         private double CaptureFrame (Mat frameMat)
@@ -939,7 +945,7 @@ namespace HoloLensWithOpenCVForUnityExample
         {
             if (isImagesInputMode) return;
 
-            webCamTextureToMatHelper.Initialize (null, webCamTextureToMatHelper.requestedWidth, webCamTextureToMatHelper.requestedHeight, !webCamTextureToMatHelper.requestedIsFrontFacing);
+            webCamTextureToMatHelper.requestedIsFrontFacing = !webCamTextureToMatHelper.IsFrontFacing();
         }
 
         /// <summary>
@@ -1081,10 +1087,10 @@ namespace HoloLensWithOpenCVForUnityExample
             // save the calibration images.
             #if UNITY_WEBGL && !UNITY_EDITOR
             string format = "jpg";
-            MatOfInt compressionParams = new MatOfInt(Imgcodecs.CV_IMWRITE_JPEG_QUALITY, 100);
+            MatOfInt compressionParams = new MatOfInt(Imgcodecs.IMWRITE_JPEG_QUALITY, 100);
             #else
             string format = "png";
-            MatOfInt compressionParams = new MatOfInt(Imgcodecs.CV_IMWRITE_PNG_COMPRESSION, 0);
+            MatOfInt compressionParams = new MatOfInt(Imgcodecs.IMWRITE_PNG_COMPRESSION, 0);
             #endif
             for (int i = 0; i < allImgs.Count; ++i) {
                 Imgcodecs.imwrite (Path.Combine (saveCalibratonFileDirectoryPath, calibratonDirectoryName + "_" + i.ToString("00") + "." + format), allImgs[i], compressionParams);

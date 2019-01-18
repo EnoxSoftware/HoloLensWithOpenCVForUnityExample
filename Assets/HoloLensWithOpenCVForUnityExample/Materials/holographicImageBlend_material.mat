@@ -4,7 +4,7 @@
 Material:
   serializedVersion: 6
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_Name: holographicImageBlend_material
   m_Shader: {fileID: 4800000, guid: 5ea4faa0446148445b06b0b0a453f5ec, type: 3}
@@ -23,7 +23,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Floats:
-    - _VignetteScale: 1.5
+    - _VignetteScale: 0
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _VignetteOffset: {r: 0.043, g: -0.025, b: 0, a: 0}
+    - _VignetteOffset: {r: 0, g: 0, b: 0, a: 0}
