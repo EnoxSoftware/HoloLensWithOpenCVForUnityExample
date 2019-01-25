@@ -10,7 +10,7 @@ namespace OpenCVForUnity.RectangleTrack
     /// <summary>
     /// Rectangle tracker.
     /// Referring to https://github.com/Itseez/opencv/blob/master/modules/objdetect/src/detection_based_tracker.cpp.
-    /// v 1.0.3
+    /// v 1.0.4
     /// </summary>
     public class RectangleTracker
     {
@@ -295,6 +295,19 @@ namespace OpenCVForUnity.RectangleTrack
                 }
 
                 rectsWhereRegions [i] = r;
+            }
+
+            return rectsWhereRegions;
+        }
+
+        public Rect[] CreateRawRects ()
+        {
+            Rect[] rectsWhereRegions = new Rect[_trackedObjects.Count];
+
+            int count = _trackedObjects.Count;
+            for (int i = 0; i < count; i++)
+            {
+                rectsWhereRegions[i] = _trackedObjects[i].position;
             }
 
             return rectsWhereRegions;
