@@ -427,7 +427,7 @@ namespace HoloLensWithOpenCVForUnityExample
                 // Position the canvas object slightly in front
                 // of the real world web camera.
                 Vector3 position = cameraToWorldMatrix.GetColumn (3) - cameraToWorldMatrix.GetColumn (2);
-                position *= 1.2f;
+                position *= 2.2f;
 
                 // Rotate the canvas object so that it faces the user.
                 Quaternion rotation = Quaternion.LookRotation (-cameraToWorldMatrix.GetColumn (2), cameraToWorldMatrix.GetColumn (1));
@@ -589,7 +589,7 @@ namespace HoloLensWithOpenCVForUnityExample
                 // Position the canvas object slightly in front
                 // of the real world web camera.
                 Vector3 position = cameraToWorldMatrix.GetColumn (3) - cameraToWorldMatrix.GetColumn (2);
-                position *= 1.2f;
+                position *= 2.2f;
 
                 // Rotate the canvas object so that it faces the user.
                 Quaternion rotation = Quaternion.LookRotation (-cameraToWorldMatrix.GetColumn (2), cameraToWorldMatrix.GetColumn (1));

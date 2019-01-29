@@ -321,7 +321,7 @@ namespace HoloLensWithOpenCVForUnityExample
             texture.wrapMode = TextureWrapMode.Clamp;
 
             previewQuad.GetComponent<MeshRenderer>().material.mainTexture = texture;
-            previewQuad.transform.localScale = new Vector3 (1, height/width, 1);
+            previewQuad.transform.localScale = new Vector3 (0.2f * width / height, 0.2f, 1);
 
             float imageSizeScale = 1.0f;
 

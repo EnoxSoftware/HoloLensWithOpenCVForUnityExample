@@ -55,7 +55,7 @@ namespace HoloLensWithOpenCVForUnityExample
         /// <summary>
         /// The overlay Distance.
         /// </summary>
-        public float overlayDistance = 1.2f;
+        public float overlayDistance = 2.2f;
 
         /// <summary>
         /// The webcam texture to mat helper.

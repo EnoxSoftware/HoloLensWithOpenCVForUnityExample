@@ -813,7 +813,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2be8bd2ebd8277c448d6d81c75517fee, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  TagalongDistance: 1.1
+  TagalongDistance: 2
   EnforceDistance: 1
   PositionUpdateSpeed: 9.8
   SmoothMotion: 1
@@ -920,8 +920,8 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 471094658}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 1.1}
-  m_LocalScale: {x: 0.0005, y: 0.0005, z: 0.0005}
+  m_LocalPosition: {x: 0, y: 0, z: 2}
+  m_LocalScale: {x: 0.001, y: 0.001, z: 0.001}
   m_Children:
   - {fileID: 110278493}
   - {fileID: 1419009409}
@@ -973,8 +973,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 524242140}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -1, y: 1, z: 10}
-  m_LocalScale: {x: 1, y: 0.7, z: 1}
+  m_LocalPosition: {x: -0.3, y: 0.2, z: 2.2}
+  m_LocalScale: {x: 0.354, y: 0.2, z: 1}
   m_Children: []
   m_Father: {fileID: 1600368325}
   m_RootOrder: 2
@@ -1926,6 +1926,11 @@ PrefabInstance:
     - target: {fileID: 4541142303025740, guid: d29bc40b7f3df26479d6a0aac211c355, type: 3}
       propertyPath: m_RootOrder
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 20770519707920992, guid: d29bc40b7f3df26479d6a0aac211c355,
+        type: 3}
+      propertyPath: far clip plane
+      value: 5
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d29bc40b7f3df26479d6a0aac211c355, type: 3}
@@ -3214,7 +3219,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d8d27c020f1865746b5abf91a35964df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _downscaleRatio: 3
+  _downscaleRatio: 2
   _frameSkippingRatio: 2
 --- !u!4 &1709852085
 Transform:
@@ -3254,10 +3259,10 @@ MonoBehaviour:
   arCube: {fileID: 883805531}
   arGameObject: {fileID: 1982842541}
   arCamera: {fileID: 1080557610}
-  enableLowPassFilter: 1
+  enableLowPassFilter: 0
   enableLowPassFilterToggle: {fileID: 364483433}
   positionLowPass: 0.02
-  rotationLowPass: 2
+  rotationLowPass: 3
 --- !u!1 &1982842541
 GameObject:
   m_ObjectHideFlags: 0

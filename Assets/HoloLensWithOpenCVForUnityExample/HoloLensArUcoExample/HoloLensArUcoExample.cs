@@ -281,7 +281,7 @@ namespace HoloLensWithOpenCVForUnityExample
             texture = new Texture2D ((int)width, (int)height, TextureFormat.RGB24, false);
 
             previewQuad.GetComponent<MeshRenderer>().material.mainTexture = texture;
-            previewQuad.transform.localScale = new Vector3 (1, height/width, 1);
+            previewQuad.transform.localScale = new Vector3 (0.2f * width / height, 0.2f, 1);
             previewQuad.SetActive (displayCameraPreview);
 
 
