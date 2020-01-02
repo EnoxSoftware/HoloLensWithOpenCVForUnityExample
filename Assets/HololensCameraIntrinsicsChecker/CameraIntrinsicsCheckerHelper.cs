@@ -3,11 +3,10 @@
 */
 
 using UnityEngine;
-
+using UnityEngine.UI;
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using UnityEngine.UI;
 
 #if WINDOWS_UWP
 using System.Threading.Tasks;
@@ -25,19 +24,19 @@ namespace HololensCameraIntrinsics
     {
         public Text ResultText;
 
-        #if WINDOWS_UWP
+#if WINDOWS_UWP
         CameraIntrinsicsChecker cameraIntrinsicsChecker;
 
         // Use this for initialization
-        void Start ()
+        void Start()
         {
-            CameraIntrinsicsChecker.CreateAync (OnCameraIntrinsicsCheckerInstanceCreated);
+            CameraIntrinsicsChecker.CreateAync(OnCameraIntrinsicsCheckerInstanceCreated);
         }
 
         void OnDestroy()
         {
             if (cameraIntrinsicsChecker != null)
-                cameraIntrinsicsChecker.Dispose ();
+                cameraIntrinsicsChecker.Dispose();
         }
 
         private void OnCameraIntrinsicsCheckerInstanceCreated(CameraIntrinsicsChecker checker)
@@ -50,7 +49,7 @@ namespace HololensCameraIntrinsics
 
             this.cameraIntrinsicsChecker = checker;
 
-            checker.GetCameraIntrinsicsAync (OnCameraIntrinsicsGot);
+            checker.GetCameraIntrinsicsAync(OnCameraIntrinsicsGot);
         }
 
         private void OnCameraIntrinsicsGot(CameraIntrinsics cameraIntrinsics, VideoEncodingProperties property)
@@ -60,7 +59,6 @@ namespace HololensCameraIntrinsics
                 Debug.LogError("Getting the CameraIntrinsics object failed.");
                 return;
             }
-
 
             double calculatedFrameRate = (double)property.FrameRate.Numerator / (double)property.FrameRate.Denominator;
 
@@ -80,13 +78,12 @@ namespace HololensCameraIntrinsics
             {
                 ResultText.text += result;
             }, false);
-            
 
         }
-        #endif
+#endif
     }
 
-    #if WINDOWS_UWP
+#if WINDOWS_UWP
     public class CameraIntrinsicsChecker
     {
         public delegate void OnVideoCaptureResourceCreatedCallback(CameraIntrinsicsChecker chakerObject);
@@ -173,7 +170,7 @@ namespace HololensCameraIntrinsics
             foreach (var property in allProperties)
             {
                 await _mediaCapture.VideoDeviceController.SetMediaStreamPropertiesAsync(STREAM_TYPE, property);
-                
+
                 // Get CameraIntrinsics
                 var taskCompletionSource = new TaskCompletionSource<bool>();
 
@@ -233,12 +230,12 @@ namespace HololensCameraIntrinsics
 
             _mediaCapture = new MediaCapture();
             await _mediaCapture.InitializeAsync(new MediaCaptureInitializationSettings()
-                {
-                    VideoDeviceId = _deviceInfo.Id,
-                    SourceGroup = _frameSourceGroup,
-                    MemoryPreference = MediaCaptureMemoryPreference.Cpu,
-                    StreamingCaptureMode = StreamingCaptureMode.Video
-                });
+            {
+                VideoDeviceId = _deviceInfo.Id,
+                SourceGroup = _frameSourceGroup,
+                MemoryPreference = MediaCaptureMemoryPreference.Cpu,
+                StreamingCaptureMode = StreamingCaptureMode.Video
+            });
             _mediaCapture.VideoDeviceController.Focus.TrySetAuto(true);
         }
 
@@ -248,5 +245,5 @@ namespace HololensCameraIntrinsics
                 sourceInfo.SourceKind == MediaFrameSourceKind.Color);
         }
     }
-    #endif
+#endif
 }

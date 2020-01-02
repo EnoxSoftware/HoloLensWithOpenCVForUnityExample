@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 using OpenCVForUnity.CoreModule;
 using OpenCVForUnity.ImgprocModule;
 using OpenCVForUnity.UnityUtils.Helper;
@@ -16,42 +18,12 @@ namespace HoloLensWithOpenCVForUnityExample
     /// Referring to http://dev.classmethod.jp/smartphone/opencv-manga-2/.
     /// </summary>
     [RequireComponent(typeof(HololensCameraStreamToMatHelper))]
-    public class HoloLensComicFilterExample : ExampleSceneBase
+    public class HoloLensComicFilterExample : MonoBehaviour
     {
         /// <summary>
-        /// The gray mat.
+        /// The comic filter.
         /// </summary>
-        Mat grayMat;
-
-        /// <summary>
-        /// The line mat.
-        /// </summary>
-        Mat lineMat;
-
-        /// <summary>
-        /// The mask mat.
-        /// </summary>
-        Mat maskMat;
-
-        /// <summary>
-        /// The background mat.
-        /// </summary>
-        Mat bgMat;
-
-        /// <summary>
-        /// The dst mat.
-        /// </summary>
-        Mat dstMat;
-
-        /// <summary>
-        /// The gray pixels.
-        /// </summary>
-        byte[] grayPixels;
-
-        /// <summary>
-        /// The mask pixels.
-        /// </summary>
-        byte[] maskPixels;
+        ComicFilter comicFilter;
 
         /// <summary>
         /// The texture.
@@ -68,25 +40,21 @@ namespace HoloLensWithOpenCVForUnityExample
         /// </summary>
         HololensCameraStreamToMatHelper webCamTextureToMatHelper;
 
-        Rect processingAreaRect;
-        public Vector2 outsideClippingRatio = new Vector2(0.17f, 0.19f);
-        public Vector2 clippingOffset = new Vector2(0.043f, -0.025f);
         public float vignetteScale = 1.5f;
-
-        Mat dstMatClippingROI;
+        public Slider VignetteScaleSlider;
 
         readonly static Queue<Action> ExecuteOnMainThread = new Queue<Action>();
 
         // Use this for initialization
-        protected override void Start ()
+        protected void Start ()
         {
-            base.Start ();
-
             webCamTextureToMatHelper = gameObject.GetComponent<HololensCameraStreamToMatHelper> ();
             #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
             webCamTextureToMatHelper.frameMatAcquired += OnFrameMatAcquired;
             #endif
             webCamTextureToMatHelper.Initialize ();
+
+            VignetteScaleSlider.value = vignetteScale;
         }
 
         /// <summary>
@@ -110,36 +78,10 @@ namespace HoloLensWithOpenCVForUnityExample
 
             Debug.Log ("Screen.width " + Screen.width + " Screen.height " + Screen.height + " Screen.orientation " + Screen.orientation);
         
-
-            processingAreaRect = new Rect ((int)(webCamTextureMat.cols ()*(outsideClippingRatio.x - clippingOffset.x)), (int)(webCamTextureMat.rows ()*(outsideClippingRatio.y + clippingOffset.y)),
-                (int)(webCamTextureMat.cols ()*(1f-outsideClippingRatio.x*2)), (int)(webCamTextureMat.rows ()*(1f-outsideClippingRatio.y*2)));
-            processingAreaRect = processingAreaRect.intersect (new Rect(0,0,webCamTextureMat.cols (),webCamTextureMat.rows ()));
-
-
-            dstMat = new Mat (webCamTextureMat.rows (), webCamTextureMat.cols (), CvType.CV_8UC1);
-            dstMatClippingROI = new Mat (dstMat, processingAreaRect);
-
-            // fill all black.
-            //Imgproc.rectangle (dstMat, new Point (0, 0), new Point (dstMat.width (), dstMat.height ()), new Scalar (0, 0, 0, 0), -1);
-
-
-            grayMat = new Mat (dstMatClippingROI.rows (), dstMatClippingROI.cols (), CvType.CV_8UC1);
-            lineMat = new Mat (dstMatClippingROI.rows (), dstMatClippingROI.cols (), CvType.CV_8UC1);
-            maskMat = new Mat (dstMatClippingROI.rows (), dstMatClippingROI.cols (), CvType.CV_8UC1);
-
-            //create a striped background.
-            bgMat = new Mat (dstMatClippingROI.rows (), dstMatClippingROI.cols (), CvType.CV_8UC1, new Scalar (255));
-            for (int i = 0; i < bgMat.rows ()*2.5f; i=i+4) {
-                Imgproc.line (bgMat, new Point (0, 0 + i), new Point (bgMat.cols (), -bgMat.cols () + i), new Scalar (0), 1);
-            }
-
-            grayPixels = new byte[grayMat.cols () * grayMat.rows () * grayMat.channels ()];
-            maskPixels = new byte[maskMat.cols () * maskMat.rows () * maskMat.channels ()];
-             
+            comicFilter = new ComicFilter(60, 120, 3);
 
             quad_renderer = gameObject.GetComponent<Renderer> () as Renderer;
             quad_renderer.sharedMaterial.SetTexture ("_MainTex", texture);
-            quad_renderer.sharedMaterial.SetVector ("_VignetteOffset", new Vector4(clippingOffset.x, clippingOffset.y));
 
             Matrix4x4 projectionMatrix;
             #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
@@ -175,10 +117,6 @@ namespace HoloLensWithOpenCVForUnityExample
             float aspectRatio = (1.0f / Mathf.Tan (halfOfVerticalFov)) / projectionMatrix.m00;
             Debug.Log ("halfOfVerticalFov " + halfOfVerticalFov);
             Debug.Log ("aspectRatio " + aspectRatio);
-
-            //
-            //Imgproc.rectangle (dstMat, new Point (0, 0), new Point (webCamTextureMat.width (), webCamTextureMat.height ()), new Scalar (126, 126, 126, 255), -1);
-            //
         }
 
         /// <summary>
@@ -193,16 +131,7 @@ namespace HoloLensWithOpenCVForUnityExample
                 ExecuteOnMainThread.Clear();
             }
 
-            grayMat.Dispose ();
-            lineMat.Dispose ();
-            maskMat.Dispose ();
-        
-            bgMat.Dispose ();
-            dstMat.Dispose ();
-            dstMatClippingROI.Dispose ();
-
-            grayPixels = null;
-            maskPixels = null;
+            comicFilter.Dispose();
         }
 
         /// <summary>
@@ -213,59 +142,13 @@ namespace HoloLensWithOpenCVForUnityExample
             Debug.Log ("OnWebCamTextureToMatHelperErrorOccurred " + errorCode);
         }
 
-        #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
+#if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
         public void OnFrameMatAcquired (Mat bgraMat, Matrix4x4 projectionMatrix, Matrix4x4 cameraToWorldMatrix)
         {
-            Mat bgraMatClipROI = new Mat(bgraMat, processingAreaRect);
+            comicFilter.Process(bgraMat, bgraMat, true);
 
-            Imgproc.cvtColor (bgraMatClipROI, grayMat, Imgproc.COLOR_BGRA2GRAY);
+            //Imgproc.putText (bgraMat, "W:" + bgraMat.width () + " H:" + bgraMat.height () + " SO:" + Screen.orientation, new Point (5, bgraMat.rows () - 10), Imgproc.FONT_HERSHEY_SIMPLEX, 1.0, new Scalar (0), 2, Imgproc.LINE_AA, false);
 
-            bgMat.copyTo (dstMatClippingROI);
-
-            Imgproc.GaussianBlur (grayMat, lineMat, new Size (3, 3), 0);
-
-
-            grayMat.get (0, 0, grayPixels);
-
-            for (int i = 0; i < grayPixels.Length; i++) {
-                maskPixels [i] = 0;
-
-                if (grayPixels [i] < 70) {
-                    grayPixels [i] = 0;
-                    maskPixels [i] = 1;
-                } else if (70 <= grayPixels [i] && grayPixels [i] < 120) {
-                    grayPixels [i] = 100;
-
-                } else {
-                    grayPixels [i] = 255;
-                    maskPixels [i] = 1;
-                }
-            }
-
-            grayMat.put (0, 0, grayPixels);
-            maskMat.put (0, 0, maskPixels);
-            grayMat.copyTo (dstMatClippingROI, maskMat);
-
-
-            Imgproc.Canny (lineMat, lineMat, 20, 120);
-
-            lineMat.copyTo (maskMat);
-
-            Core.bitwise_not (lineMat, lineMat);
-
-            lineMat.copyTo (dstMatClippingROI, maskMat);
-
-
-            //Imgproc.putText (dstMat, "W:" + dstMat.width () + " H:" + dstMat.height () + " SO:" + Screen.orientation, new Point (5, dstMat.rows () - 10), Imgproc.FONT_HERSHEY_SIMPLEX, 1.0, new Scalar (0), 2, Imgproc.LINE_AA, false);
-
-            Imgproc.cvtColor(dstMat, bgraMat, Imgproc.COLOR_GRAY2BGRA);
-
-            //
-            //Imgproc.rectangle (bgraMat, new Point (0, 0), new Point (bgraMat.width (), bgraMat.height ()), new Scalar (0, 0, 255, 255), 4);
-            //Imgproc.rectangle (bgraMat, processingAreaRect.tl(), processingAreaRect.br(), new Scalar (0, 0, 255, 255), 4);
-            //
-
-            bgraMatClipROI.Dispose ();
 
             Enqueue(() => {
 
@@ -280,8 +163,7 @@ namespace HoloLensWithOpenCVForUnityExample
 
                 // Position the canvas object slightly in front
                 // of the real world web camera.
-                Vector3 position = cameraToWorldMatrix.GetColumn (3) - cameraToWorldMatrix.GetColumn (2);
-                position *= 2.2f;
+                Vector3 position = cameraToWorldMatrix.GetColumn(3) - cameraToWorldMatrix.GetColumn(2) * 2.2f;
 
                 // Rotate the canvas object so that it faces the user.
                 Quaternion rotation = Quaternion.LookRotation (-cameraToWorldMatrix.GetColumn (2), cameraToWorldMatrix.GetColumn (1));
@@ -311,7 +193,7 @@ namespace HoloLensWithOpenCVForUnityExample
             }
         }
 
-        #else
+#else
 
         // Update is called once per frame
         void Update ()
@@ -320,62 +202,12 @@ namespace HoloLensWithOpenCVForUnityExample
 
                 Mat rgbaMat = webCamTextureToMatHelper.GetMat ();
 
-                Mat rgbaMatClipROI = new Mat(rgbaMat, processingAreaRect);
+                comicFilter.Process(rgbaMat, rgbaMat, false);
 
-                Imgproc.cvtColor (rgbaMatClipROI, grayMat, Imgproc.COLOR_RGBA2GRAY);
+                //Imgproc.putText (rgbaMat, "W:" + rgbaMat.width () + " H:" + rgbaMat.height () + " SO:" + Screen.orientation, new Point (5, rgbaMat.rows () - 10), Imgproc.FONT_HERSHEY_SIMPLEX, 1.0, new Scalar (0), 2, Imgproc.LINE_AA, false);
 
-                bgMat.copyTo (dstMatClippingROI);
-
-                Imgproc.GaussianBlur (grayMat, lineMat, new Size (3, 3), 0);
-
-
-                grayMat.get (0, 0, grayPixels);
-
-                for (int i = 0; i < grayPixels.Length; i++) {
-
-                    maskPixels [i] = 0;
-
-                    if (grayPixels [i] < 70) {
-                        grayPixels[i] = 0;
-                        maskPixels [i] = 1;
-                    } else if (70 <= grayPixels [i] && grayPixels [i] < 120) {
-                        grayPixels [i] = 100;
-
-                    } else {
-                        grayPixels[i] = 255;
-                        maskPixels [i] = 1;
-                    }
-                }
-
-                grayMat.put (0, 0, grayPixels);
-                maskMat.put (0, 0, maskPixels);
-                grayMat.copyTo (dstMatClippingROI, maskMat);
-
-
-                Imgproc.Canny (lineMat, lineMat, 20, 120);
-
-                lineMat.copyTo (maskMat);
-
-                Core.bitwise_not (lineMat, lineMat);
-
-                lineMat.copyTo (dstMatClippingROI, maskMat);
-
-
-                //Imgproc.putText (dstMat, "W:" + dstMat.width () + " H:" + dstMat.height () + " SO:" + Screen.orientation, new Point (5, dstMat.rows () - 10), Imgproc.FONT_HERSHEY_SIMPLEX, 1.0, new Scalar (0), 2, Imgproc.LINE_AA, false);
-
-                Imgproc.cvtColor(dstMat, rgbaMat, Imgproc.COLOR_GRAY2RGBA);
-
-                //
-                //Imgproc.rectangle (rgbaMat, new Point (0, 0), new Point (rgbaMat.width (), rgbaMat.height ()), new Scalar (255, 0, 0, 255), 4);
-                //Imgproc.rectangle (rgbaMat, processingAreaRect.tl(), processingAreaRect.br(), new Scalar (255, 0, 0, 255), 4);
-                //
-
-                //
                 Utils.fastMatToTexture2D(rgbaMat, texture);
-
-                rgbaMatClipROI.Dispose ();
             }
-
 
             if (webCamTextureToMatHelper.IsPlaying ()) {
 
@@ -386,8 +218,7 @@ namespace HoloLensWithOpenCVForUnityExample
 
                 // Position the canvas object slightly in front
                 // of the real world web camera.
-                Vector3 position = cameraToWorldMatrix.GetColumn (3) - cameraToWorldMatrix.GetColumn (2);
-                position *= 2.2f;
+                Vector3 position = cameraToWorldMatrix.GetColumn(3) - cameraToWorldMatrix.GetColumn(2) * 2.2f;
 
                 // Rotate the canvas object so that it faces the user.
                 Quaternion rotation = Quaternion.LookRotation (-cameraToWorldMatrix.GetColumn (2), cameraToWorldMatrix.GetColumn (1));
@@ -395,7 +226,6 @@ namespace HoloLensWithOpenCVForUnityExample
                 gameObject.transform.position = position;
                 gameObject.transform.rotation = rotation;
             }
-
         }
         #endif
 
@@ -415,7 +245,7 @@ namespace HoloLensWithOpenCVForUnityExample
         /// </summary>
         public void OnBackButtonClick ()
         {
-            LoadScene ("HoloLensWithOpenCVForUnityExample");
+            SceneManager.LoadScene("HoloLensWithOpenCVForUnityExample");
         }
 
         /// <summary>
@@ -448,6 +278,17 @@ namespace HoloLensWithOpenCVForUnityExample
         public void OnChangeCameraButtonClick ()
         {
             webCamTextureToMatHelper.requestedIsFrontFacing = !webCamTextureToMatHelper.IsFrontFacing();
+        }
+
+        /// <summary>
+        /// Raises the vignette scale slider value changed event.
+        /// </summary>
+        public void OnVignetteScaleSliderValueChanged()
+        {
+            vignetteScale = VignetteScaleSlider.value;
+
+            if (quad_renderer != null)
+                quad_renderer.sharedMaterial.SetFloat("_VignetteScale", vignetteScale);
         }
     }
 }

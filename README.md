@@ -2,7 +2,7 @@
 
 
 ## What's new
-* IL2CPP Backend support.
+* MRTKv2 support.
 
 
 ## Demo Video (old version)
@@ -15,37 +15,39 @@
 
 
 ## Environment
-* Hololens 10.0.17763.134 (RS5)
-* Windows 10 Pro 1803  
-* Windows 10 SDK 10.0.17134 
-* Visual Studio 2017 (v157.4.0)  
-* Unity 2018.3.0f2+  
-* [HoloToolkit-Unity](https://github.com/Microsoft/MixedRealityToolkit-Unity/releases) 2017.4.3.0 
-* [OpenCV for Unity](https://assetstore.unity.com/packages/tools/integration/opencv-for-unity-21088?aid=1011l4ehR) 2.3.3+ 
+* Hololens 10.0.17763.914 (RS5)
+* Windows 10 SDK 10.0.18362.0
+* Visual Studio 2017 or 2019
+* Unity 2018.4.7f1+  
+* [Microsoft Mixed Reality Toolkit](https://github.com/Microsoft/MixedRealityToolkit-Unity/releases) v2.2.0 
+* [OpenCV for Unity](https://assetstore.unity.com/packages/tools/integration/opencv-for-unity-21088?aid=1011l4ehR) 2.3.7+ 
 * [HoloLensCameraStream](https://github.com/VulcanTechnologies/HoloLensCameraStream) 
 
 
 ## Setup
 1. Download the latest release unitypackage. [HoloLensWithOpenCVForUnityExample.unitypackage](https://github.com/EnoxSoftware/HoloLensWithOpenCVForUnityExample/releases)
 1. Create a new project. (HoloLensWithOpenCVForUnityExample)
-1. Import the HoloToolkit-Unity-2017.4.3.0.unitypackage.
-    * Setup the HoloToolKit. (Mixed Reality ToolKit > Configure > Apply Mixed Reality Project Setting)
 1. Import the OpenCVForUnity.
     * Setup the OpenCVForUnity. (Tools > OpenCV for Unity > Set Plugin Import Settings)
     * Move the "OpenCVForUnity/StreamingAssets/haarcascade_frontalface_alt.xml" and "OpenCVForUnity/StreamingAssets/lbpcascade_frontalface.xml" to the "Assets/StreamingAssets/" folder.
 1. Clone HoloLensCameraStream repository.
     * Copy the "HoloLensCameraStream/HoloLensVideoCaptureExample/Assets/CamStream/" folder to the "Assets/" folder.
     * Set the scripting backend of the plugin inspector to "Any Script Backend". (IL2CPP support)
+1. Import the Microsoft.MixedReality.Toolkit.Unity.Foundation.2.2.0.unitypackage.
+    * Setup the MRTKv2. (Mixed Reality ToolKit > Utilities > Configure Unity Project)
 1. Import the HoloLensWithOpenCVForUnityExample.unitypackage.
 1. Add the "Assets/HoloLensWithOpenCVForUnityExample/*.unity" files to the "Scenes In Build" list in the "Build Settings" window.
-1. Set "IL2CPP" to "Other Settings > Configuration > Scripting Backend" selector in the "Player Settings" window.
-1. Add "WebCam" to "Publishing Settings > Capabilities" checklist in the "Player Settings" window.
 1. Build and Deploy to HoloLens. (See [https://developer.microsoft.com/en-us/windows/holographic/holograms_100](https://developer.microsoft.com/en-us/windows/holographic/holograms_100))
-    *  (Print the AR marker "ArUcoMarker_DICT_6X6_250_ID1.pdf" on an A4 size paper)  
+    *  (Print the AR marker "CanonicalMarker-d10-i1-sp500-bb1.pdf" and "ChArUcoBoard-mx5-my7-d10-os1000-bb1.pdf" on an A4 size paper)  
 
-|Assets|Buld Settings|
+|Project Assets|MRTK Project Configurator|
 |---|---|
-|![buildsetting01.jpg](buildsetting01.jpg)|![buildsetting02.jpg](buildsetting02.jpg)|
+|![ProjectAssets.jpg](ProjectAssets.jpg)|![MRTKProjectConfigurator.jpg](MRTKProjectConfigurator.jpg)|
+
+|Build Settings|Player Settings|
+|---|---|
+|![BuildSettings.jpg](BuildSettings.jpg)|![PlayerSettings.jpg](PlayerSettings.jpg)|
+
 
 ## ScreenShot (old version)
 ![screenshot01.jpg](screenshot01.jpg) 

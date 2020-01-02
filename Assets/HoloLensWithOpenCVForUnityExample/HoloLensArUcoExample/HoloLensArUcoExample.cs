@@ -1,12 +1,11 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.IO;
 using System.Xml.Serialization;
-using HoloToolkit.Unity.InputModule;
 using OpenCVForUnity.ArucoModule;
 using OpenCVForUnity.CoreModule;
 using OpenCVForUnity.UnityUtils.Helper;
@@ -14,6 +13,7 @@ using OpenCVForUnity.Calib3dModule;
 using OpenCVForUnity.ImgprocModule;
 using OpenCVForUnity.UnityUtils;
 using HoloLensWithOpenCVForUnity.UnityUtils.Helper;
+using Microsoft.MixedReality.Toolkit.Input;
 
 namespace HoloLensWithOpenCVForUnityExample
 {
@@ -23,9 +23,9 @@ namespace HoloLensWithOpenCVForUnityExample
     /// Referring to https://github.com/opencv/opencv_contrib/blob/master/modules/aruco/samples/detect_markers.cpp.
     /// </summary>
     [RequireComponent(typeof(HololensCameraStreamToMatHelper))]
-    public class HoloLensArUcoExample : ExampleSceneBase
+    public class HoloLensArUcoExample : MonoBehaviour
     {
-        [HeaderAttribute ("Preview")]
+        [HeaderAttribute("Preview")]
 
         /// <summary>
         /// The preview quad.
@@ -43,7 +43,7 @@ namespace HoloLensWithOpenCVForUnityExample
         public Toggle displayCameraPreviewToggle;
 
 
-        [HeaderAttribute ("Detection")]
+        [HeaderAttribute("Detection")]
 
         /// <summary>
         /// Determines if restores the camera parameters when the file exists.
@@ -61,7 +61,7 @@ namespace HoloLensWithOpenCVForUnityExample
         public bool enableDetection = true;
 
 
-        [HeaderAttribute ("AR")]
+        [HeaderAttribute("AR")]
 
         /// <summary>
         /// Determines if applied the pose estimation.
@@ -215,74 +215,93 @@ namespace HoloLensWithOpenCVForUnityExample
         double distCoeffs5 = -0.2388065;//radial distortion coefficient k3.
 
         readonly static Queue<Action> ExecuteOnMainThread = new Queue<Action>();
-        System.Object sync = new System.Object ();
+        System.Object sync = new System.Object();
         Mat downScaleFrameMat;
 
         bool _isThreadRunning = false;
-        bool isThreadRunning {
-            get { lock (sync)
-                return _isThreadRunning; }
-            set { lock (sync)
-                _isThreadRunning = value; }
+        bool isThreadRunning
+        {
+            get
+            {
+                lock (sync)
+                    return _isThreadRunning;
+            }
+            set
+            {
+                lock (sync)
+                    _isThreadRunning = value;
+            }
         }
 
         bool _isDetecting = false;
-        bool isDetecting {
-            get { lock (sync)
-                return _isDetecting; }
-            set { lock (sync)
-                _isDetecting = value; }
+        bool isDetecting
+        {
+            get
+            {
+                lock (sync)
+                    return _isDetecting;
+            }
+            set
+            {
+                lock (sync)
+                    _isDetecting = value;
+            }
         }
 
         bool _hasUpdatedARTransformMatrix = false;
-        bool hasUpdatedARTransformMatrix {
-            get { lock (sync)
-                return _hasUpdatedARTransformMatrix; }
-            set { lock (sync)
-                _hasUpdatedARTransformMatrix = value; }
+        bool hasUpdatedARTransformMatrix
+        {
+            get
+            {
+                lock (sync)
+                    return _hasUpdatedARTransformMatrix;
+            }
+            set
+            {
+                lock (sync)
+                    _hasUpdatedARTransformMatrix = value;
+            }
         }
 
         // Use this for initialization
-        protected override void Start ()
+        protected void Start()
         {
-            base.Start ();
-
             displayCameraPreviewToggle.isOn = displayCameraPreview;
             useStoredCameraParametersToggle.isOn = useStoredCameraParameters;
             enableLowPassFilterToggle.isOn = enableLowPassFilter;
 
-            imageOptimizationHelper = gameObject.GetComponent<ImageOptimizationHelper> ();
-            webCamTextureToMatHelper = gameObject.GetComponent<HololensCameraStreamToMatHelper> ();
-            #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
+            imageOptimizationHelper = gameObject.GetComponent<ImageOptimizationHelper>();
+            webCamTextureToMatHelper = gameObject.GetComponent<HololensCameraStreamToMatHelper>();
+#if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
             webCamTextureToMatHelper.frameMatAcquired += OnFrameMatAcquired;
-            #endif
+#endif
 
-            webCamTextureToMatHelper.Initialize ();
+            webCamTextureToMatHelper.Initialize();
         }
 
         /// <summary>
         /// Raises the web cam texture to mat helper initialized event.
         /// </summary>
-        public void OnWebCamTextureToMatHelperInitialized ()
+        public void OnWebCamTextureToMatHelperInitialized()
         {
-            Debug.Log ("OnWebCamTextureToMatHelperInitialized");
+            Debug.Log("OnWebCamTextureToMatHelperInitialized");
 
-            Mat rawSizeMat = webCamTextureToMatHelper.GetMat ();
+            Mat rawSizeMat = webCamTextureToMatHelper.GetMat();
             float rawSizeWidth = rawSizeMat.width();
             float rawSizeHeight = rawSizeMat.height();
 
             Mat webCamTextureMat = imageOptimizationHelper.GetDownScaleMat(rawSizeMat);
 
-            Debug.Log ("Screen.width " + Screen.width + " Screen.height " + Screen.height + " Screen.orientation " + Screen.orientation);
+            Debug.Log("Screen.width " + Screen.width + " Screen.height " + Screen.height + " Screen.orientation " + Screen.orientation);
 
             float width = webCamTextureMat.width();
             float height = webCamTextureMat.height();
 
-            texture = new Texture2D ((int)width, (int)height, TextureFormat.RGB24, false);
+            texture = new Texture2D((int)width, (int)height, TextureFormat.RGB24, false);
 
             previewQuad.GetComponent<MeshRenderer>().material.mainTexture = texture;
-            previewQuad.transform.localScale = new Vector3 (0.2f * width / height, 0.2f, 1);
-            previewQuad.SetActive (displayCameraPreview);
+            previewQuad.transform.localScale = new Vector3(0.2f * width / height, 0.2f, 1);
+            previewQuad.SetActive(displayCameraPreview);
 
 
             // set camera parameters.
@@ -291,203 +310,214 @@ namespace HoloLensWithOpenCVForUnityExample
             double cx;
             double cy;
 
-            string loadDirectoryPath = Path.Combine (Application.persistentDataPath, "HoloLensArUcoCameraCalibrationExample");
+            string loadDirectoryPath = Path.Combine(Application.persistentDataPath, "HoloLensArUcoCameraCalibrationExample");
             string calibratonDirectoryName = "camera_parameters" + rawSizeWidth + "x" + rawSizeHeight;
-            string loadCalibratonFileDirectoryPath = Path.Combine (loadDirectoryPath, calibratonDirectoryName);
-            string loadPath = Path.Combine (loadCalibratonFileDirectoryPath, calibratonDirectoryName + ".xml");
-            if (useStoredCameraParameters && File.Exists (loadPath)) {
+            string loadCalibratonFileDirectoryPath = Path.Combine(loadDirectoryPath, calibratonDirectoryName);
+            string loadPath = Path.Combine(loadCalibratonFileDirectoryPath, calibratonDirectoryName + ".xml");
+            if (useStoredCameraParameters && File.Exists(loadPath))
+            {
+                // If there is a camera parameters stored by HoloLensArUcoCameraCalibrationExample, use it
+
                 CameraParameters param;
-                XmlSerializer serializer = new XmlSerializer( typeof( CameraParameters ) );
-                using (var stream = new FileStream (loadPath, FileMode.Open)) {
-                    param = (CameraParameters)serializer.Deserialize (stream);
+                XmlSerializer serializer = new XmlSerializer(typeof(CameraParameters));
+                using (var stream = new FileStream(loadPath, FileMode.Open))
+                {
+                    param = (CameraParameters)serializer.Deserialize(stream);
                 }
-                  
+
                 fx = param.camera_matrix[0];
                 fy = param.camera_matrix[4];
                 cx = param.camera_matrix[2] / imageOptimizationHelper.downscaleRatio;
                 cy = param.camera_matrix[5] / imageOptimizationHelper.downscaleRatio;
 
-                camMatrix = new Mat (3, 3, CvType.CV_64FC1);
-                camMatrix.put (0, 0, fx);
-                camMatrix.put (0, 1, 0);
-                camMatrix.put (0, 2, cx);
-                camMatrix.put (1, 0, 0);
-                camMatrix.put (1, 1, fy);
-                camMatrix.put (1, 2, cy);
-                camMatrix.put (2, 0, 0);
-                camMatrix.put (2, 1, 0);
-                camMatrix.put (2, 2, 1.0f);
+                camMatrix = new Mat(3, 3, CvType.CV_64FC1);
+                camMatrix.put(0, 0, fx);
+                camMatrix.put(0, 1, 0);
+                camMatrix.put(0, 2, cx);
+                camMatrix.put(1, 0, 0);
+                camMatrix.put(1, 1, fy);
+                camMatrix.put(1, 2, cy);
+                camMatrix.put(2, 0, 0);
+                camMatrix.put(2, 1, 0);
+                camMatrix.put(2, 2, 1.0f);
 
-                distCoeffs = new MatOfDouble(param.GetDistortionCoefficients ());
+                distCoeffs = new MatOfDouble(param.GetDistortionCoefficients());
 
-                Debug.Log ("Loaded CameraParameters from a stored XML file.");
-                Debug.Log ("loadPath: " + loadPath);
+                Debug.Log("Loaded CameraParameters from a stored XML file.");
+                Debug.Log("loadPath: " + loadPath);
 
-            } else {
+            }
+            else
+            {
                 fx = this.fx;
                 fy = this.fy;
                 cx = this.cx / imageOptimizationHelper.downscaleRatio;
                 cy = this.cy / imageOptimizationHelper.downscaleRatio;
 
-                camMatrix = new Mat (3, 3, CvType.CV_64FC1);
-                camMatrix.put (0, 0, fx);
-                camMatrix.put (0, 1, 0);
-                camMatrix.put (0, 2, cx);
-                camMatrix.put (1, 0, 0);
-                camMatrix.put (1, 1, fy);
-                camMatrix.put (1, 2, cy);
-                camMatrix.put (2, 0, 0);
-                camMatrix.put (2, 1, 0);
-                camMatrix.put (2, 2, 1.0f);
+                camMatrix = new Mat(3, 3, CvType.CV_64FC1);
+                camMatrix.put(0, 0, fx);
+                camMatrix.put(0, 1, 0);
+                camMatrix.put(0, 2, cx);
+                camMatrix.put(1, 0, 0);
+                camMatrix.put(1, 1, fy);
+                camMatrix.put(1, 2, cy);
+                camMatrix.put(2, 0, 0);
+                camMatrix.put(2, 1, 0);
+                camMatrix.put(2, 2, 1.0f);
 
-                distCoeffs = new MatOfDouble (this.distCoeffs1, this.distCoeffs2, this.distCoeffs3, this.distCoeffs4, this.distCoeffs5);
+                distCoeffs = new MatOfDouble(this.distCoeffs1, this.distCoeffs2, this.distCoeffs3, this.distCoeffs4, this.distCoeffs5);
 
-                Debug.Log ("Created a dummy CameraParameters.");
+                Debug.Log("Created a dummy CameraParameters.");
             }
 
-            Debug.Log ("camMatrix " + camMatrix.dump ());
-            Debug.Log ("distCoeffs " + distCoeffs.dump ());
+            Debug.Log("camMatrix " + camMatrix.dump());
+            Debug.Log("distCoeffs " + distCoeffs.dump());
 
 
             //Calibration camera
-            Size imageSize = new Size (width, height);
+            Size imageSize = new Size(width, height);
             double apertureWidth = 0;
             double apertureHeight = 0;
             double[] fovx = new double[1];
             double[] fovy = new double[1];
             double[] focalLength = new double[1];
-            Point principalPoint = new Point (0, 0);
+            Point principalPoint = new Point(0, 0);
             double[] aspectratio = new double[1];
 
-            Calib3d.calibrationMatrixValues (camMatrix, imageSize, apertureWidth, apertureHeight, fovx, fovy, focalLength, principalPoint, aspectratio);
+            Calib3d.calibrationMatrixValues(camMatrix, imageSize, apertureWidth, apertureHeight, fovx, fovy, focalLength, principalPoint, aspectratio);
 
-            Debug.Log ("imageSize " + imageSize.ToString ());
-            Debug.Log ("apertureWidth " + apertureWidth);
-            Debug.Log ("apertureHeight " + apertureHeight);
-            Debug.Log ("fovx " + fovx [0]);
-            Debug.Log ("fovy " + fovy [0]);
-            Debug.Log ("focalLength " + focalLength [0]);
-            Debug.Log ("principalPoint " + principalPoint.ToString ());
-            Debug.Log ("aspectratio " + aspectratio [0]);
+            Debug.Log("imageSize " + imageSize.ToString());
+            Debug.Log("apertureWidth " + apertureWidth);
+            Debug.Log("apertureHeight " + apertureHeight);
+            Debug.Log("fovx " + fovx[0]);
+            Debug.Log("fovy " + fovy[0]);
+            Debug.Log("focalLength " + focalLength[0]);
+            Debug.Log("principalPoint " + principalPoint.ToString());
+            Debug.Log("aspectratio " + aspectratio[0]);
 
             // Display objects near the camera.
             arCamera.nearClipPlane = 0.01f;
 
-            grayMat = new Mat ();
-            ids = new Mat ();
-            corners = new List<Mat> ();
-            rejectedCorners = new List<Mat> ();
-            rvecs = new Mat ();
-            tvecs = new Mat ();
-            rotMat = new Mat (3, 3, CvType.CV_64FC1);
+            grayMat = new Mat();
+            ids = new Mat();
+            corners = new List<Mat>();
+            rejectedCorners = new List<Mat>();
+            rvecs = new Mat();
+            tvecs = new Mat();
+            rotMat = new Mat(3, 3, CvType.CV_64FC1);
 
 
-            transformationM = new Matrix4x4 ();
+            transformationM = new Matrix4x4();
 
-            invertYM = Matrix4x4.TRS (Vector3.zero, Quaternion.identity, new Vector3 (1, -1, 1));
-            Debug.Log ("invertYM " + invertYM.ToString ());
+            invertYM = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(1, -1, 1));
+            Debug.Log("invertYM " + invertYM.ToString());
 
-            invertZM = Matrix4x4.TRS (Vector3.zero, Quaternion.identity, new Vector3 (1, 1, -1));
-            Debug.Log ("invertZM " + invertZM.ToString ());
+            invertZM = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(1, 1, -1));
+            Debug.Log("invertZM " + invertZM.ToString());
 
-            detectorParams = DetectorParameters.create ();
-            dictionary = Aruco.getPredefinedDictionary (Aruco.DICT_6X6_250);
+            detectorParams = DetectorParameters.create();
+            dictionary = Aruco.getPredefinedDictionary(Aruco.DICT_6X6_250);
 
 
             //If WebCamera is frontFaceing,flip Mat.
-            if (webCamTextureToMatHelper.GetWebCamDevice ().isFrontFacing) {
-                webCamTextureToMatHelper.flipHorizontal = true;
-            }
-                
-            downScaleFrameMat = new Mat ((int)height, (int)width, CvType.CV_8UC4);
-            rgbMat4preview = new Mat ();
+            webCamTextureToMatHelper.flipHorizontal = webCamTextureToMatHelper.GetWebCamDevice().isFrontFacing;
+
+            downScaleFrameMat = new Mat((int)height, (int)width, CvType.CV_8UC4);
+            rgbMat4preview = new Mat();
         }
 
         /// <summary>
         /// Raises the web cam texture to mat helper disposed event.
         /// </summary>
-        public void OnWebCamTextureToMatHelperDisposed ()
+        public void OnWebCamTextureToMatHelperDisposed()
         {
-            Debug.Log ("OnWebCamTextureToMatHelperDisposed");
+            Debug.Log("OnWebCamTextureToMatHelperDisposed");
 
-            #if !WINDOWS_UWP || DISABLE_HOLOLENSCAMSTREAM_API
+#if !WINDOWS_UWP || DISABLE_HOLOLENSCAMSTREAM_API
             StopThread();
-            lock (ExecuteOnMainThread) {
-                ExecuteOnMainThread.Clear ();
+            lock (ExecuteOnMainThread)
+            {
+                ExecuteOnMainThread.Clear();
             }
             isDetecting = false;
-            #endif
+#endif
             hasUpdatedARTransformMatrix = false;
 
             if (grayMat != null)
-                grayMat.Dispose ();
+                grayMat.Dispose();
             if (ids != null)
-                ids.Dispose ();
-            foreach (var item in corners) {
-                item.Dispose ();
+                ids.Dispose();
+            foreach (var item in corners)
+            {
+                item.Dispose();
             }
-            corners.Clear ();
-            foreach (var item in rejectedCorners) {
-                item.Dispose ();
+            corners.Clear();
+            foreach (var item in rejectedCorners)
+            {
+                item.Dispose();
             }
-            rejectedCorners.Clear ();
+            rejectedCorners.Clear();
             if (rvecs != null)
-                rvecs.Dispose ();
+                rvecs.Dispose();
             if (tvecs != null)
-                tvecs.Dispose ();
+                tvecs.Dispose();
             if (rotMat != null)
-                rotMat.Dispose ();
+                rotMat.Dispose();
 
             if (rgbMat4preview != null)
-                rgbMat4preview.Dispose ();
+                rgbMat4preview.Dispose();
         }
 
         /// <summary>
         /// Raises the web cam texture to mat helper error occurred event.
         /// </summary>
         /// <param name="errorCode">Error code.</param>
-        public void OnWebCamTextureToMatHelperErrorOccurred(WebCamTextureToMatHelper.ErrorCode errorCode){
-            Debug.Log ("OnWebCamTextureToMatHelperErrorOccurred " + errorCode);
+        public void OnWebCamTextureToMatHelperErrorOccurred(WebCamTextureToMatHelper.ErrorCode errorCode)
+        {
+            Debug.Log("OnWebCamTextureToMatHelperErrorOccurred " + errorCode);
         }
 
-        #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
-        public void OnFrameMatAcquired (Mat bgraMat, Matrix4x4 projectionMatrix, Matrix4x4 cameraToWorldMatrix)
+#if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
+        public void OnFrameMatAcquired(Mat bgraMat, Matrix4x4 projectionMatrix, Matrix4x4 cameraToWorldMatrix)
         {
-            downScaleFrameMat = imageOptimizationHelper.GetDownScaleMat (bgraMat);
+            downScaleFrameMat = imageOptimizationHelper.GetDownScaleMat(bgraMat);
 
-            if (enableDetection) {
-
-                Imgproc.cvtColor (downScaleFrameMat, grayMat, Imgproc.COLOR_BGRA2GRAY);
+            if (enableDetection)
+            {
+                Imgproc.cvtColor(downScaleFrameMat, grayMat, Imgproc.COLOR_BGRA2GRAY);
 
                 // Detect markers and estimate Pose
-                Aruco.detectMarkers (grayMat, dictionary, corners, ids, detectorParams, rejectedCorners, camMatrix, distCoeffs);
+                Aruco.detectMarkers(grayMat, dictionary, corners, ids, detectorParams, rejectedCorners, camMatrix, distCoeffs);
 
-                if (applyEstimationPose && ids.total () > 0){
-                    Aruco.estimatePoseSingleMarkers (corners, markerLength, camMatrix, distCoeffs, rvecs, tvecs);
+                if (applyEstimationPose && ids.total() > 0)
+                {
+                    Aruco.estimatePoseSingleMarkers(corners, markerLength, camMatrix, distCoeffs, rvecs, tvecs);
 
-                    for (int i = 0; i < ids.total (); i++) {
-
+                    for (int i = 0; i < ids.total(); i++)
+                    {
                         //This example can display ARObject on only first detected marker.
-                        if (i == 0) {
-
+                        if (i == 0)
+                        {
                             // Convert to unity pose data.
                             double[] rvecArr = new double[3];
-                            rvecs.get (0, 0, rvecArr);
+                            rvecs.get(0, 0, rvecArr);
                             double[] tvecArr = new double[3];
-                            tvecs.get (0, 0, tvecArr);
+                            tvecs.get(0, 0, tvecArr);
                             tvecArr[2] /= imageOptimizationHelper.downscaleRatio;
-                            PoseData poseData = ARUtils.ConvertRvecTvecToPoseData (rvecArr, tvecArr);
+                            PoseData poseData = ARUtils.ConvertRvecTvecToPoseData(rvecArr, tvecArr);
 
                             // Changes in pos/rot below these thresholds are ignored.
-                            if (enableLowPassFilter) {
-                                ARUtils.LowpassPoseData (ref oldPoseData, ref poseData, positionLowPass, rotationLowPass);
+                            if (enableLowPassFilter)
+                            {
+                                ARUtils.LowpassPoseData(ref oldPoseData, ref poseData, positionLowPass, rotationLowPass);
                             }
                             oldPoseData = poseData;
 
                             // Create transform matrix.
-                            transformationM = Matrix4x4.TRS (poseData.pos, poseData.rot, Vector3.one);
+                            transformationM = Matrix4x4.TRS(poseData.pos, poseData.rot, Vector3.one);
 
-                            lock (sync){
+                            lock (sync)
+                            {
                                 // Right-handed coordinates system (OpenCV) to left-handed one (Unity)
                                 ARM = invertYM * transformationM;
 
@@ -504,49 +534,59 @@ namespace HoloLensWithOpenCVForUnityExample
             }
 
             Mat rgbMat4preview = null;
-            if (displayCameraPreview) {
-                rgbMat4preview = new Mat ();
-                Imgproc.cvtColor (downScaleFrameMat, rgbMat4preview, Imgproc.COLOR_BGRA2RGB);
+            if (displayCameraPreview)
+            {
+                rgbMat4preview = new Mat();
+                Imgproc.cvtColor(downScaleFrameMat, rgbMat4preview, Imgproc.COLOR_BGRA2RGB);
 
-                if (ids.total () > 0) {
-                    Aruco.drawDetectedMarkers (rgbMat4preview, corners, ids, new Scalar (0, 255, 0));
+                if (ids.total() > 0)
+                {
+                    Aruco.drawDetectedMarkers(rgbMat4preview, corners, ids, new Scalar(0, 255, 0));
 
-                    if (applyEstimationPose) {
-                        for (int i = 0; i < ids.total (); i++) {
-                            using (Mat rvec = new Mat (rvecs, new OpenCVForUnity.CoreModule.Rect(0, i, 1, 1)))
-                            using (Mat tvec = new Mat (tvecs, new OpenCVForUnity.CoreModule.Rect(0, i, 1, 1))) {
+                    if (applyEstimationPose)
+                    {
+                        for (int i = 0; i < ids.total(); i++)
+                        {
+                            using (Mat rvec = new Mat(rvecs, new OpenCVForUnity.CoreModule.Rect(0, i, 1, 1)))
+                            using (Mat tvec = new Mat(tvecs, new OpenCVForUnity.CoreModule.Rect(0, i, 1, 1)))
+                            {
 
                                 // In this example we are processing with RGB color image, so Axis-color correspondences are X: blue, Y: green, Z: red. (Usually X: red, Y: green, Z: blue)
-                                Aruco.drawAxis (rgbMat4preview, camMatrix, distCoeffs, rvec, tvec, markerLength * 0.5f);
+                                Aruco.drawAxis(rgbMat4preview, camMatrix, distCoeffs, rvec, tvec, markerLength * 0.5f);
                             }
                         }
                     }
                 }
             }
 
-            Enqueue(() => {
+            Enqueue(() =>
+            {
+                if (!webCamTextureToMatHelper.IsPlaying()) return;
 
-                if (!webCamTextureToMatHelper.IsPlaying ()) return;
-
-                if (displayCameraPreview && rgbMat4preview != null) {
-                    Utils.fastMatToTexture2D (rgbMat4preview, texture);
+                if (displayCameraPreview && rgbMat4preview != null)
+                {
+                    Utils.fastMatToTexture2D(rgbMat4preview, texture);
                 }
 
-                if (applyEstimationPose) {
-                    if (hasUpdatedARTransformMatrix) {
+                if (applyEstimationPose)
+                {
+                    if (hasUpdatedARTransformMatrix)
+                    {
                         hasUpdatedARTransformMatrix = false;
 
-                        lock (sync){
+                        lock (sync)
+                        {
                             // Apply camera transform matrix.
                             ARM = cameraToWorldMatrix * invertZM * ARM;
 
-                            ARUtils.SetTransformFromMatrix (arGameObject.transform, ref ARM);
+                            ARUtils.SetTransformFromMatrix(arGameObject.transform, ref ARM);
                         }
                     }
                 }
 
-                bgraMat.Dispose ();
-                if (rgbMat4preview != null){
+                bgraMat.Dispose();
+                if (rgbMat4preview != null)
+                {
                     rgbMat4preview.Dispose();
                 }
 
@@ -572,58 +612,66 @@ namespace HoloLensWithOpenCVForUnityExample
             }
         }
 
-        #else
+#else
 
         // Update is called once per frame
-        void Update ()
+        void Update()
         {
-            lock (ExecuteOnMainThread) {
-                while (ExecuteOnMainThread.Count > 0) {
-                    ExecuteOnMainThread.Dequeue ().Invoke ();
+            lock (ExecuteOnMainThread)
+            {
+                while (ExecuteOnMainThread.Count > 0)
+                {
+                    ExecuteOnMainThread.Dequeue().Invoke();
                 }
             }
 
-            if (webCamTextureToMatHelper.IsPlaying () && webCamTextureToMatHelper.DidUpdateThisFrame ()) {
-                
-                if (enableDetection && !isDetecting ) {
+            if (webCamTextureToMatHelper.IsPlaying() && webCamTextureToMatHelper.DidUpdateThisFrame())
+            {
+
+                if (enableDetection && !isDetecting)
+                {
                     isDetecting = true;
 
-                    downScaleFrameMat = imageOptimizationHelper.GetDownScaleMat (webCamTextureToMatHelper.GetMat ());
+                    downScaleFrameMat = imageOptimizationHelper.GetDownScaleMat(webCamTextureToMatHelper.GetMat());
 
-                    StartThread (ThreadWorker);
+                    StartThread(ThreadWorker);
                 }
             }
         }
 
         private void StartThread(Action action)
         {
-            #if WINDOWS_UWP || (!UNITY_WSA_10_0 && (NET_4_6 || NET_STANDARD_2_0))
+#if WINDOWS_UWP || (!UNITY_WSA_10_0 && (NET_4_6 || NET_STANDARD_2_0))
             System.Threading.Tasks.Task.Run(() => action());
-            #else
+#else
             ThreadPool.QueueUserWorkItem(_ => action());
-            #endif
+#endif
         }
 
-        private void StopThread ()
+        private void StopThread()
         {
             if (!isThreadRunning)
                 return;
 
-            while (isThreadRunning) {
+            while (isThreadRunning)
+            {
                 //Wait threading stop
-            } 
+            }
         }
 
         private void ThreadWorker()
         {
             isThreadRunning = true;
 
-            DetectARUcoMarker ();
+            DetectARUcoMarker();
 
-            lock (ExecuteOnMainThread) {
-                if (ExecuteOnMainThread.Count == 0) {
-                    ExecuteOnMainThread.Enqueue (() => {
-                        OnDetectionDone ();
+            lock (ExecuteOnMainThread)
+            {
+                if (ExecuteOnMainThread.Count == 0)
+                {
+                    ExecuteOnMainThread.Enqueue(() =>
+                    {
+                        OnDetectionDone();
                     });
                 }
             }
@@ -633,41 +681,44 @@ namespace HoloLensWithOpenCVForUnityExample
 
         private void DetectARUcoMarker()
         {
-            Imgproc.cvtColor (downScaleFrameMat, grayMat, Imgproc.COLOR_RGBA2GRAY);            
+            Imgproc.cvtColor(downScaleFrameMat, grayMat, Imgproc.COLOR_RGBA2GRAY);
 
             // Detect markers and estimate Pose
-            Aruco.detectMarkers (grayMat, dictionary, corners, ids, detectorParams, rejectedCorners, camMatrix, distCoeffs);
+            Aruco.detectMarkers(grayMat, dictionary, corners, ids, detectorParams, rejectedCorners, camMatrix, distCoeffs);
 
-            if (applyEstimationPose && ids.total () > 0){
-                Aruco.estimatePoseSingleMarkers (corners, markerLength, camMatrix, distCoeffs, rvecs, tvecs);
+            if (applyEstimationPose && ids.total() > 0)
+            {
+                Aruco.estimatePoseSingleMarkers(corners, markerLength, camMatrix, distCoeffs, rvecs, tvecs);
 
-                for (int i = 0; i < ids.total (); i++) {
-
+                for (int i = 0; i < ids.total(); i++)
+                {
                     //This example can display ARObject on only first detected marker.
-                    if (i == 0) {
-
+                    if (i == 0)
+                    {
                         // Convert to unity pose data.
                         double[] rvecArr = new double[3];
-                        rvecs.get (0, 0, rvecArr);
+                        rvecs.get(0, 0, rvecArr);
                         double[] tvecArr = new double[3];
-                        tvecs.get (0, 0, tvecArr);
+                        tvecs.get(0, 0, tvecArr);
                         tvecArr[2] /= imageOptimizationHelper.downscaleRatio;
-                        PoseData poseData = ARUtils.ConvertRvecTvecToPoseData (rvecArr, tvecArr);
+                        PoseData poseData = ARUtils.ConvertRvecTvecToPoseData(rvecArr, tvecArr);
 
                         // Changes in pos/rot below these thresholds are ignored.
-                        if (enableLowPassFilter) {
-                            ARUtils.LowpassPoseData (ref oldPoseData, ref poseData, positionLowPass, rotationLowPass);
+                        if (enableLowPassFilter)
+                        {
+                            ARUtils.LowpassPoseData(ref oldPoseData, ref poseData, positionLowPass, rotationLowPass);
                         }
                         oldPoseData = poseData;
 
                         // Create transform matrix.
-                        transformationM = Matrix4x4.TRS (poseData.pos, poseData.rot, Vector3.one);
+                        transformationM = Matrix4x4.TRS(poseData.pos, poseData.rot, Vector3.one);
 
                         // Right-handed coordinates system (OpenCV) to left-handed one (Unity)
-                        ARM = invertYM * transformationM;
+                        // https://stackoverflow.com/questions/30234945/change-handedness-of-a-row-major-4x4-transformation-matrix
+                        ARM = invertYM * transformationM * invertYM;
 
-                        // Apply Z-axis inverted matrix.
-                        ARM = ARM * invertZM;
+                        // Apply Y-axis and Z-axis refletion matrix. (Adjust the posture of the AR object)
+                        ARM = ARM * invertYM * invertZM;
 
                         hasUpdatedARTransformMatrix = true;
 
@@ -679,131 +730,148 @@ namespace HoloLensWithOpenCVForUnityExample
 
         private void OnDetectionDone()
         {
-            if (displayCameraPreview) {
-                Imgproc.cvtColor (downScaleFrameMat, rgbMat4preview, Imgproc.COLOR_RGBA2RGB);
+            if (displayCameraPreview)
+            {
+                Imgproc.cvtColor(downScaleFrameMat, rgbMat4preview, Imgproc.COLOR_RGBA2RGB);
 
-                if (ids.total () > 0) {
-                    Aruco.drawDetectedMarkers (rgbMat4preview, corners, ids, new Scalar (0, 255, 0));
+                if (ids.total() > 0)
+                {
+                    Aruco.drawDetectedMarkers(rgbMat4preview, corners, ids, new Scalar(0, 255, 0));
 
-                    if (applyEstimationPose) {
-                        for (int i = 0; i < ids.total (); i++) {
-                            using (Mat rvec = new Mat (rvecs, new OpenCVForUnity.CoreModule.Rect(0, i, 1, 1)))
-                            using (Mat tvec = new Mat (tvecs, new OpenCVForUnity.CoreModule.Rect(0, i, 1, 1))) {
+                    if (applyEstimationPose)
+                    {
+                        for (int i = 0; i < ids.total(); i++)
+                        {
+                            using (Mat rvec = new Mat(rvecs, new OpenCVForUnity.CoreModule.Rect(0, i, 1, 1)))
+                            using (Mat tvec = new Mat(tvecs, new OpenCVForUnity.CoreModule.Rect(0, i, 1, 1)))
+                            {
 
                                 // In this example we are processing with RGB color image, so Axis-color correspondences are X: blue, Y: green, Z: red. (Usually X: red, Y: green, Z: blue)
-                                Aruco.drawAxis (rgbMat4preview, camMatrix, distCoeffs, rvec, tvec, markerLength * 0.5f);
+                                Aruco.drawAxis(rgbMat4preview, camMatrix, distCoeffs, rvec, tvec, markerLength * 0.5f);
                             }
                         }
                     }
                 }
 
-                Utils.fastMatToTexture2D (rgbMat4preview, texture);
+                Utils.fastMatToTexture2D(rgbMat4preview, texture);
             }
 
-            if (applyEstimationPose) {
-                if (hasUpdatedARTransformMatrix) {
+            if (applyEstimationPose)
+            {
+                if (hasUpdatedARTransformMatrix)
+                {
                     hasUpdatedARTransformMatrix = false;
 
-                    // Apply the cameraToWorld matrix with the Z-axis inverted.         
+                    // Apply the cameraToWorld matrix with the Z-axis inverted.
                     ARM = arCamera.cameraToWorldMatrix * invertZM * ARM;
 
-                    ARUtils.SetTransformFromMatrix (arGameObject.transform, ref ARM);
+                    ARUtils.SetTransformFromMatrix(arGameObject.transform, ref ARM);
                 }
             }
 
             isDetecting = false;
         }
-        #endif
-            
+#endif
+
         /// <summary>
         /// Raises the destroy event.
         /// </summary>
-        void OnDestroy ()
+        void OnDestroy()
         {
-            imageOptimizationHelper.Dispose ();
-            #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
+            imageOptimizationHelper.Dispose();
+#if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
             webCamTextureToMatHelper.frameMatAcquired -= OnFrameMatAcquired;
-            #endif
-            webCamTextureToMatHelper.Dispose ();
+#endif
+            webCamTextureToMatHelper.Dispose();
         }
 
         /// <summary>
         /// Raises the back button click event.
         /// </summary>
-        public void OnBackButtonClick ()
+        public void OnBackButtonClick()
         {
-            LoadScene ("HoloLensWithOpenCVForUnityExample");
+            SceneManager.LoadScene("HoloLensWithOpenCVForUnityExample");
         }
 
         /// <summary>
         /// Raises the play button click event.
         /// </summary>
-        public void OnPlayButtonClick ()
+        public void OnPlayButtonClick()
         {
-            webCamTextureToMatHelper.Play ();
+            webCamTextureToMatHelper.Play();
         }
 
         /// <summary>
         /// Raises the pause button click event.
         /// </summary>
-        public void OnPauseButtonClick ()
+        public void OnPauseButtonClick()
         {
-            webCamTextureToMatHelper.Pause ();
+            webCamTextureToMatHelper.Pause();
         }
 
         /// <summary>
         /// Raises the stop button click event.
         /// </summary>
-        public void OnStopButtonClick ()
+        public void OnStopButtonClick()
         {
-            webCamTextureToMatHelper.Stop ();
+            webCamTextureToMatHelper.Stop();
         }
 
         /// <summary>
         /// Raises the change camera button click event.
         /// </summary>
-        public void OnChangeCameraButtonClick ()
+        public void OnChangeCameraButtonClick()
         {
-            webCamTextureToMatHelper.requestedIsFrontFacing = !webCamTextureToMatHelper.IsFrontFacing ();
+            webCamTextureToMatHelper.requestedIsFrontFacing = !webCamTextureToMatHelper.IsFrontFacing();
         }
 
         /// <summary>
         /// Raises the display camera preview toggle value changed event.
         /// </summary>
-        public void OnDisplayCamreaPreviewToggleValueChanged ()
+        public void OnDisplayCamreaPreviewToggleValueChanged()
         {
-            if (displayCameraPreviewToggle.isOn) {
+            if (displayCameraPreviewToggle.isOn)
+            {
                 displayCameraPreview = true;
-            } else {
+            }
+            else
+            {
                 displayCameraPreview = false;
             }
-            previewQuad.SetActive (displayCameraPreview);
+            previewQuad.SetActive(displayCameraPreview);
         }
 
         /// <summary>
         /// Raises the use stored camera parameters toggle value changed event.
         /// </summary>
-        public void OnUseStoredCameraParametersToggleValueChanged ()
+        public void OnUseStoredCameraParametersToggleValueChanged()
         {
-            if (useStoredCameraParametersToggle.isOn) {
+            if (useStoredCameraParametersToggle.isOn)
+            {
                 useStoredCameraParameters = true;
-            } else {
+            }
+            else
+            {
                 useStoredCameraParameters = false;
             }
 
-            if (webCamTextureToMatHelper != null && webCamTextureToMatHelper.IsInitialized ()) {
-                webCamTextureToMatHelper.Initialize ();
+            if (webCamTextureToMatHelper != null && webCamTextureToMatHelper.IsInitialized())
+            {
+                webCamTextureToMatHelper.Initialize();
             }
         }
 
         /// <summary>
         /// Raises the enable low pass filter toggle value changed event.
         /// </summary>
-        public void OnEnableLowPassFilterToggleValueChanged ()
+        public void OnEnableLowPassFilterToggleValueChanged()
         {
-            if (enableLowPassFilterToggle.isOn) {
+            if (enableLowPassFilterToggle.isOn)
+            {
                 enableLowPassFilter = true;
-            } else {
+            }
+            else
+            {
                 enableLowPassFilter = false;
             }
         }
@@ -811,21 +879,26 @@ namespace HoloLensWithOpenCVForUnityExample
         /// <summary>
         /// Raises the tapped event.
         /// </summary>
-        public void OnTapped ()
+        public void OnTapped(MixedRealityPointerEventData eventData)
         {
+            Debug.Log("OnTapped!");
+
             // Determine if a Gaze pointer is over a GUI.
-            if (GazeManager.Instance.HitObject != null && (GazeManager.Instance.HitObject.GetComponent<Button>() != null || GazeManager.Instance.HitObject.GetComponent<Toggle>() != null
-                 || GazeManager.Instance.HitObject.GetComponent<Text>() != null || GazeManager.Instance.HitObject.GetComponent<Image>() != null))
+            if (eventData.selectedObject != null && (eventData.selectedObject.GetComponent<Button>() != null || eventData.selectedObject.GetComponent<Toggle>() != null
+                 || eventData.selectedObject.GetComponent<Text>() != null || eventData.selectedObject.GetComponent<Image>() != null))
             {
                 return;
-            }            
+            }
 
-            if (applyEstimationPose) {
+            if (applyEstimationPose)
+            {
                 applyEstimationPose = false;
-                arCube.GetComponent<MeshRenderer> ().material.color = Color.gray;
-            } else {
+                arCube.GetComponent<MeshRenderer>().material.color = Color.gray;
+            }
+            else
+            {
                 applyEstimationPose = true;
-                arCube.GetComponent<MeshRenderer> ().material.color = Color.red;
+                arCube.GetComponent<MeshRenderer>().material.color = Color.red;
             }
         }
     }

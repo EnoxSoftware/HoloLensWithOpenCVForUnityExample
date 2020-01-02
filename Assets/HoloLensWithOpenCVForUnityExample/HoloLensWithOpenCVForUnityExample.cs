@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 using OpenCVForUnity.CoreModule;
 
 namespace HoloLensWithOpenCVForUnityExample
@@ -8,7 +9,7 @@ namespace HoloLensWithOpenCVForUnityExample
     /// <summary>
     /// HoloLensWithOpenCVForUnity Example
     /// </summary>
-    public class HoloLensWithOpenCVForUnityExample : ExampleSceneBase
+    public class HoloLensWithOpenCVForUnityExample : MonoBehaviour
     {
         public Text exampleTitle;
         public Text versionInfo;
@@ -16,49 +17,47 @@ namespace HoloLensWithOpenCVForUnityExample
         static float verticalNormalizedPosition = 1f;
 
         // Use this for initialization
-        protected override void Start ()
+        protected void Start()
         {
-            base.Start ();
-
             exampleTitle.text = "HoloLensWithOpenCVForUnity Example " + Application.version;
 
             versionInfo.text = Core.NATIVE_LIBRARY_NAME + " " + OpenCVForUnity.UnityUtils.Utils.getVersion() + " (" + Core.VERSION + ")";
             versionInfo.text += " / UnityEditor " + Application.unityVersion;
             versionInfo.text += " / ";
 
-            #if UNITY_EDITOR
+#if UNITY_EDITOR
             versionInfo.text += "Editor";
-            #elif UNITY_STANDALONE_WIN
+#elif UNITY_STANDALONE_WIN
             versionInfo.text += "Windows";
-            #elif UNITY_STANDALONE_OSX
+#elif UNITY_STANDALONE_OSX
             versionInfo.text += "Mac OSX";
-            #elif UNITY_STANDALONE_LINUX
+#elif UNITY_STANDALONE_LINUX
             versionInfo.text += "Linux";
-            #elif UNITY_ANDROID
+#elif UNITY_ANDROID
             versionInfo.text += "Android";
-            #elif UNITY_IOS
+#elif UNITY_IOS
             versionInfo.text += "iOS";
-            #elif UNITY_WSA
+#elif UNITY_WSA
             versionInfo.text += "WSA";
-            #elif UNITY_WEBGL
+#elif UNITY_WEBGL
             versionInfo.text += "WebGL";
-            #endif
+#endif
             versionInfo.text += " ";
-            #if ENABLE_MONO
+#if ENABLE_MONO
             versionInfo.text += "Mono";
-            #elif ENABLE_IL2CPP
+#elif ENABLE_IL2CPP
             versionInfo.text += "IL2CPP";
-            #elif ENABLE_DOTNET
+#elif ENABLE_DOTNET
             versionInfo.text += ".NET";
-            #endif
+#endif
 
             scrollRect.verticalNormalizedPosition = verticalNormalizedPosition;
         }
-        
+
         // Update is called once per frame
-        void Update ()
+        void Update()
         {
-            
+
         }
 
         public void OnScrollRectValueChanged()
@@ -67,39 +66,39 @@ namespace HoloLensWithOpenCVForUnityExample
         }
 
 
-        public void OnShowLicenseButtonClick ()
+        public void OnShowLicenseButtonClick()
         {
-            LoadScene ("ShowLicense");
+            SceneManager.LoadScene("ShowLicense");
         }
 
-        public void OnHoloLensPhotoCaptureExampleButtonClick ()
+        public void OnHoloLensPhotoCaptureExampleButtonClick()
         {
-            LoadScene ("HoloLensPhotoCaptureExample");
+            SceneManager.LoadScene("HoloLensPhotoCaptureExample");
         }
 
-        public void OnHoloLensComicFilterExampleButtonClick ()
+        public void OnHoloLensComicFilterExampleButtonClick()
         {
-            LoadScene ("HoloLensComicFilterExample");
-        }
-        
-        public void OnHoloLensFaceDetectionExampleButtonClick ()
-        {
-            LoadScene ("HoloLensFaceDetectionExample");
+            SceneManager.LoadScene("HoloLensComicFilterExample");
         }
 
-        public void OnHoloLensFaceDetectionOverlayExampleButtonClick ()
+        public void OnHoloLensFaceDetectionExampleButtonClick()
         {
-            LoadScene ("HoloLensFaceDetectionOverlayExample");
+            SceneManager.LoadScene("HoloLensFaceDetectionExample");
         }
 
-        public void OnHoloLensArUcoExampleButtonClick ()
+        public void OnHoloLensFaceDetectionOverlayExampleButtonClick()
         {
-            LoadScene ("HoloLensArUcoExample");
+            SceneManager.LoadScene("HoloLensFaceDetectionOverlayExample");
         }
 
-        public void OnHoloLensArUcoCameraCalibrationExampleButtonClick ()
+        public void OnHoloLensArUcoExampleButtonClick()
         {
-            LoadScene ("HoloLensArUcoCameraCalibrationExample");
+            SceneManager.LoadScene("HoloLensArUcoExample");
+        }
+
+        public void OnHoloLensArUcoCameraCalibrationExampleButtonClick()
+        {
+            SceneManager.LoadScene("HoloLensArUcoCameraCalibrationExample");
         }
     }
 }
