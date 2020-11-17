@@ -112,11 +112,6 @@ namespace HoloLensWithOpenCVForUnityExample
         HololensCameraStreamToMatHelper webCamTextureToMatHelper;
 
         /// <summary>
-        /// The gray mat.
-        /// </summary>
-        Mat grayMat;
-
-        /// <summary>
         /// The bgr mat.
         /// </summary>
         Mat bgrMat;
@@ -204,6 +199,7 @@ namespace HoloLensWithOpenCVForUnityExample
         IEnumerator Start()
         {
             webCamTextureToMatHelper = gameObject.GetComponent<HololensCameraStreamToMatHelper>();
+            webCamTextureToMatHelper.outputColorFormat = WebCamTextureToMatHelper.ColorFormat.GRAY;
 
             // fix the screen orientation.
             Screen.orientation = ScreenOrientation.LandscapeLeft;
@@ -246,10 +242,7 @@ namespace HoloLensWithOpenCVForUnityExample
             InitializeCalibraton(webCamTextureMat);
 
             // if WebCamera is frontFaceing, flip Mat.
-            if (webCamTextureToMatHelper.GetWebCamDevice().isFrontFacing)
-            {
-                webCamTextureToMatHelper.flipHorizontal = true;
-            }
+            webCamTextureToMatHelper.flipHorizontal = webCamTextureToMatHelper.IsFrontFacing();
         }
 
         /// <summary>
@@ -280,9 +273,7 @@ namespace HoloLensWithOpenCVForUnityExample
             if (webCamTextureToMatHelper.IsPlaying() && webCamTextureToMatHelper.DidUpdateThisFrame())
             {
 
-                Mat rgbaMat = webCamTextureToMatHelper.GetMat();
-
-                Imgproc.cvtColor(rgbaMat, grayMat, Imgproc.COLOR_RGBA2GRAY);
+                Mat grayMat = webCamTextureToMatHelper.GetMat();
 
                 if (shouldCaptureFrame)
                 {
@@ -344,7 +335,6 @@ namespace HoloLensWithOpenCVForUnityExample
             Debug.Log("aspectratio " + aspectratio[0]);
 
 
-            grayMat = new Mat(frameMat.rows(), frameMat.cols(), CvType.CV_8UC1);
             bgrMat = new Mat(frameMat.rows(), frameMat.cols(), CvType.CV_8UC3);
             rgbaMat = new Mat(frameMat.rows(), frameMat.cols(), CvType.CV_8UC4);
             ids = new Mat();
@@ -377,8 +367,6 @@ namespace HoloLensWithOpenCVForUnityExample
         {
             ResetCalibration();
 
-            if (grayMat != null)
-                grayMat.Dispose();
             if (bgrMat != null)
                 bgrMat.Dispose();
             if (rgbaMat != null)

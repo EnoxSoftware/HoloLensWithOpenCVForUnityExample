@@ -100,5 +100,9 @@ namespace HoloLensWithOpenCVForUnityExample
         {
             SceneManager.LoadScene("HoloLensArUcoCameraCalibrationExample");
         }
+        public void OnHoloLensCameraIntrinsicsCheckerButtonClick()
+        {
+            SceneManager.LoadScene("HoloLensCameraIntrinsicsChecker");
+        }
     }
 }

@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: holographicImageBlend_material
-  m_Shader: {fileID: 4800000, guid: 5ea4faa0446148445b06b0b0a453f5ec, type: 3}
+  m_Name: quadGrayscale_material
+  m_Shader: {fileID: 4800000, guid: 8c80e077702481e4785a2b78da273469, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 5
   m_EnableInstancingVariants: 0
@@ -20,7 +20,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _MainTex:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: e266aedc629209a4196966ac4bf20d68, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Floats:

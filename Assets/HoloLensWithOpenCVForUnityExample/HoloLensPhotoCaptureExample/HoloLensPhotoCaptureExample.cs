@@ -104,7 +104,6 @@ namespace HoloLensWithOpenCVForUnityExample
 
         void OnStartPhotoMode(PhotoCapture.PhotoCaptureResult result)
         {
-            //SetupGestureRecognizer ();
             isPhotoModeRunning = true;
 
             Debug.Log("Ready!");

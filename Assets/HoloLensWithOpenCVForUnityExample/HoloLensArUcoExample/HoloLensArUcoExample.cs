@@ -13,6 +13,7 @@ using OpenCVForUnity.Calib3dModule;
 using OpenCVForUnity.ImgprocModule;
 using OpenCVForUnity.UnityUtils;
 using HoloLensWithOpenCVForUnity.UnityUtils.Helper;
+using HoloLensCameraStream;
 using Microsoft.MixedReality.Toolkit.Input;
 
 namespace HoloLensWithOpenCVForUnityExample
@@ -22,7 +23,7 @@ namespace HoloLensWithOpenCVForUnityExample
     /// An example of marker based AR using OpenCVForUnity on Hololens.
     /// Referring to https://github.com/opencv/opencv_contrib/blob/master/modules/aruco/samples/detect_markers.cpp.
     /// </summary>
-    [RequireComponent(typeof(HololensCameraStreamToMatHelper))]
+    [RequireComponent(typeof(HololensCameraStreamToMatHelper), typeof(ImageOptimizationHelper))]
     public class HoloLensArUcoExample : MonoBehaviour
     {
         [HeaderAttribute("Preview")]
@@ -46,6 +47,11 @@ namespace HoloLensWithOpenCVForUnityExample
         [HeaderAttribute("Detection")]
 
         /// <summary>
+        /// Determines if enables the detection.
+        /// </summary>
+        public bool enableDetection = true;
+
+        /// <summary>
         /// Determines if restores the camera parameters when the file exists.
         /// </summary>
         public bool useStoredCameraParameters = false;
@@ -56,9 +62,14 @@ namespace HoloLensWithOpenCVForUnityExample
         public Toggle useStoredCameraParametersToggle;
 
         /// <summary>
-        /// Determines if enables the detection.
+        /// Determines if enable downscale.
         /// </summary>
-        public bool enableDetection = true;
+        public bool enableDownScale;
+
+        /// <summary>
+        /// The enable downscale toggle.
+        /// </summary>
+        public Toggle enableDownScaleToggle;
 
 
         [HeaderAttribute("AR")]
@@ -86,44 +97,35 @@ namespace HoloLensWithOpenCVForUnityExample
         /// <summary>
         /// The AR game object.
         /// </summary>
-        public GameObject arGameObject;
+        public ARGameObject arGameObject;
 
         /// <summary>
         /// The AR camera.
         /// </summary>
         public Camera arCamera;
 
+
         [Space(10)]
 
         /// <summary>
-        /// Determines if enable low pass filter.
+        /// Determines if enable lerp filter.
         /// </summary>
-        public bool enableLowPassFilter;
+        public bool enableLerpFilter;
 
         /// <summary>
-        /// The enable low pass filter toggle.
+        /// The enable lerp filter toggle.
         /// </summary>
-        public Toggle enableLowPassFilterToggle;
-
-        /// <summary>
-        /// The position low pass. (Value in meters)
-        /// </summary>
-        public float positionLowPass = 0.025f;
-
-        /// <summary>
-        /// The rotation low pass. (Value in degrees)
-        /// </summary>
-        public float rotationLowPass = 3f;
-
-        /// <summary>
-        /// The old pose data.
-        /// </summary>
-        PoseData oldPoseData;
+        public Toggle enableLerpFilterToggle;
 
         /// <summary>
         /// The cameraparam matrix.
         /// </summary>
         Mat camMatrix;
+
+        /// <summary>
+        /// The distCoeffs.
+        /// </summary>
+        MatOfDouble distCoeffs;
 
         /// <summary>
         /// The matrix that inverts the Y-axis.
@@ -195,28 +197,15 @@ namespace HoloLensWithOpenCVForUnityExample
         /// </summary>
         ImageOptimizationHelper imageOptimizationHelper;
 
-        Mat grayMat;
         Mat rgbMat4preview;
         Texture2D texture;
 
-        // The camera matrix value of Hololens camera 896x504 size.
-        // For details on the camera matrix, please refer to this page. (http://docs.opencv.org/2.4/modules/calib3d/doc/camera_calibration_and_3d_reconstruction.html)
-        // These values ​​are unique to my device, obtained from the "Windows.Media.Devices.Core.CameraIntrinsics" class. (https://docs.microsoft.com/en-us/uwp/api/windows.media.devices.core.cameraintrinsics)
-        // Can get these values by using this helper script. (https://github.com/EnoxSoftware/HoloLensWithOpenCVForUnityExample/tree/master/Assets/HololensCameraIntrinsicsChecker/CameraIntrinsicsCheckerHelper)
-        double fx = 1035.149;//focal length x.
-        double fy = 1034.633;//focal length y.
-        double cx = 404.9134;//principal point x.
-        double cy = 236.2834;//principal point y.
-        MatOfDouble distCoeffs;
-        double distCoeffs1 = 0.2036923;//radial distortion coefficient k1.
-        double distCoeffs2 = -0.2035773;//radial distortion coefficient k2.
-        double distCoeffs3 = 0.0;//tangential distortion coefficient p1.
-        double distCoeffs4 = 0.0;//tangential distortion coefficient p2.
-        double distCoeffs5 = -0.2388065;//radial distortion coefficient k3.
 
         readonly static Queue<Action> ExecuteOnMainThread = new Queue<Action>();
         System.Object sync = new System.Object();
-        Mat downScaleFrameMat;
+
+        Mat downScaleMat;
+        float DOWNSCALE_RATIO;
 
         bool _isThreadRunning = false;
         bool isThreadRunning
@@ -263,19 +252,43 @@ namespace HoloLensWithOpenCVForUnityExample
             }
         }
 
+        bool _isDetectingInFrameArrivedThread = false;
+        bool isDetectingInFrameArrivedThread
+        {
+            get
+            {
+                lock (sync)
+                    return _isDetectingInFrameArrivedThread;
+            }
+            set
+            {
+                lock (sync)
+                    _isDetectingInFrameArrivedThread = value;
+            }
+        }
+
+        [HeaderAttribute("Debug")]
+
+        public Text renderFPS;
+        public Text videoFPS;
+        public Text trackFPS;
+        public Text debugStr;
+
+
         // Use this for initialization
         protected void Start()
         {
             displayCameraPreviewToggle.isOn = displayCameraPreview;
             useStoredCameraParametersToggle.isOn = useStoredCameraParameters;
-            enableLowPassFilterToggle.isOn = enableLowPassFilter;
+            enableDownScaleToggle.isOn = enableDownScale;
+            enableLerpFilterToggle.isOn = enableLerpFilter;
 
             imageOptimizationHelper = gameObject.GetComponent<ImageOptimizationHelper>();
             webCamTextureToMatHelper = gameObject.GetComponent<HololensCameraStreamToMatHelper>();
 #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
             webCamTextureToMatHelper.frameMatAcquired += OnFrameMatAcquired;
 #endif
-
+            webCamTextureToMatHelper.outputColorFormat = WebCamTextureToMatHelper.ColorFormat.GRAY;
             webCamTextureToMatHelper.Initialize();
         }
 
@@ -286,32 +299,42 @@ namespace HoloLensWithOpenCVForUnityExample
         {
             Debug.Log("OnWebCamTextureToMatHelperInitialized");
 
-            Mat rawSizeMat = webCamTextureToMatHelper.GetMat();
-            float rawSizeWidth = rawSizeMat.width();
-            float rawSizeHeight = rawSizeMat.height();
+            Mat grayMat = webCamTextureToMatHelper.GetMat();
 
-            Mat webCamTextureMat = imageOptimizationHelper.GetDownScaleMat(rawSizeMat);
+            float rawFrameWidth = grayMat.width();
+            float rawFrameHeight = grayMat.height();
 
-            Debug.Log("Screen.width " + Screen.width + " Screen.height " + Screen.height + " Screen.orientation " + Screen.orientation);
+            if (enableDownScale)
+            {
+                downScaleMat = imageOptimizationHelper.GetDownScaleMat(grayMat);
+                DOWNSCALE_RATIO = imageOptimizationHelper.downscaleRatio;
+            }
+            else
+            {
+                downScaleMat = grayMat;
+                DOWNSCALE_RATIO = 1.0f;
+            }
 
-            float width = webCamTextureMat.width();
-            float height = webCamTextureMat.height();
+            float width = downScaleMat.width();
+            float height = downScaleMat.height();
 
             texture = new Texture2D((int)width, (int)height, TextureFormat.RGB24, false);
-
             previewQuad.GetComponent<MeshRenderer>().material.mainTexture = texture;
             previewQuad.transform.localScale = new Vector3(0.2f * width / height, 0.2f, 1);
             previewQuad.SetActive(displayCameraPreview);
 
 
-            // set camera parameters.
-            double fx;
-            double fy;
-            double cx;
-            double cy;
+            //Debug.Log("Screen.width " + Screen.width + " Screen.height " + Screen.height + " Screen.orientation " + Screen.orientation);
 
+
+            DebugUtils.AddDebugStr(webCamTextureToMatHelper.GetWidth() + " x " + webCamTextureToMatHelper.GetHeight() + " : " + webCamTextureToMatHelper.GetFPS());
+            if (enableDownScale)
+                DebugUtils.AddDebugStr("enableDownScale = true: " + DOWNSCALE_RATIO + " / " + width + " x " + height);
+
+
+            // create camera matrix and dist coeffs.
             string loadDirectoryPath = Path.Combine(Application.persistentDataPath, "HoloLensArUcoCameraCalibrationExample");
-            string calibratonDirectoryName = "camera_parameters" + rawSizeWidth + "x" + rawSizeHeight;
+            string calibratonDirectoryName = "camera_parameters" + rawFrameWidth + "x" + rawFrameWidth;
             string loadCalibratonFileDirectoryPath = Path.Combine(loadDirectoryPath, calibratonDirectoryName);
             string loadPath = Path.Combine(loadCalibratonFileDirectoryPath, calibratonDirectoryName + ".xml");
             if (useStoredCameraParameters && File.Exists(loadPath))
@@ -325,53 +348,68 @@ namespace HoloLensWithOpenCVForUnityExample
                     param = (CameraParameters)serializer.Deserialize(stream);
                 }
 
-                fx = param.camera_matrix[0];
-                fy = param.camera_matrix[4];
-                cx = param.camera_matrix[2] / imageOptimizationHelper.downscaleRatio;
-                cy = param.camera_matrix[5] / imageOptimizationHelper.downscaleRatio;
+                double fx = param.camera_matrix[0];
+                double fy = param.camera_matrix[4];
+                double cx = param.camera_matrix[2];
+                double cy = param.camera_matrix[5];
 
-                camMatrix = new Mat(3, 3, CvType.CV_64FC1);
-                camMatrix.put(0, 0, fx);
-                camMatrix.put(0, 1, 0);
-                camMatrix.put(0, 2, cx);
-                camMatrix.put(1, 0, 0);
-                camMatrix.put(1, 1, fy);
-                camMatrix.put(1, 2, cy);
-                camMatrix.put(2, 0, 0);
-                camMatrix.put(2, 1, 0);
-                camMatrix.put(2, 2, 1.0f);
-
+                camMatrix = CreateCameraMatrix(fx, fy, cx / DOWNSCALE_RATIO, cy / DOWNSCALE_RATIO);
                 distCoeffs = new MatOfDouble(param.GetDistortionCoefficients());
 
                 Debug.Log("Loaded CameraParameters from a stored XML file.");
                 Debug.Log("loadPath: " + loadPath);
 
+                DebugUtils.AddDebugStr("Loaded CameraParameters from a stored XML file.");
+                DebugUtils.AddDebugStr("loadPath: " + loadPath);
             }
             else
             {
-                fx = this.fx;
-                fy = this.fy;
-                cx = this.cx / imageOptimizationHelper.downscaleRatio;
-                cy = this.cy / imageOptimizationHelper.downscaleRatio;
+                if (useStoredCameraParameters && !File.Exists(loadPath))
+                {
+                    DebugUtils.AddDebugStr("The CameraParameters XML file (" + loadPath + ") does not exist.");
+                }
 
-                camMatrix = new Mat(3, 3, CvType.CV_64FC1);
-                camMatrix.put(0, 0, fx);
-                camMatrix.put(0, 1, 0);
-                camMatrix.put(0, 2, cx);
-                camMatrix.put(1, 0, 0);
-                camMatrix.put(1, 1, fy);
-                camMatrix.put(1, 2, cy);
-                camMatrix.put(2, 0, 0);
-                camMatrix.put(2, 1, 0);
-                camMatrix.put(2, 2, 1.0f);
+#if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
 
-                distCoeffs = new MatOfDouble(this.distCoeffs1, this.distCoeffs2, this.distCoeffs3, this.distCoeffs4, this.distCoeffs5);
+                CameraIntrinsics cameraIntrinsics = webCamTextureToMatHelper.GetCameraIntrinsics();
 
-                Debug.Log("Created a dummy CameraParameters.");
+                camMatrix = CreateCameraMatrix(cameraIntrinsics.FocalLengthX, cameraIntrinsics.FocalLengthY, cameraIntrinsics.PrincipalPointX / DOWNSCALE_RATIO, cameraIntrinsics.PrincipalPointY / DOWNSCALE_RATIO);
+                distCoeffs = new MatOfDouble(cameraIntrinsics.RadialDistK1, cameraIntrinsics.RadialDistK2, cameraIntrinsics.RadialDistK3, cameraIntrinsics.TangentialDistP1, cameraIntrinsics.TangentialDistP2);
+
+                Debug.Log("Created CameraParameters from VideoMediaFrame.CameraIntrinsics on device.");
+
+                DebugUtils.AddDebugStr("Created CameraParameters from VideoMediaFrame.CameraIntrinsics on device.");
+
+#else
+
+                // The camera matrix value of Hololens camera 896x504 size.
+                // For details on the camera matrix, please refer to this page. (http://docs.opencv.org/2.4/modules/calib3d/doc/camera_calibration_and_3d_reconstruction.html)
+                // These values ​​are unique to my device, obtained from the "Windows.Media.Devices.Core.CameraIntrinsics" class. (https://docs.microsoft.com/en-us/uwp/api/windows.media.devices.core.cameraintrinsics)
+                // Can get these values by using this helper script. (https://github.com/EnoxSoftware/HoloLensWithOpenCVForUnityExample/tree/master/Assets/HololensCameraIntrinsicsChecker/CameraIntrinsicsCheckerHelper)
+                double fx = 1035.149;//focal length x.
+                double fy = 1034.633;//focal length y.
+                double cx = 404.9134;//principal point x.
+                double cy = 236.2834;//principal point y.
+                double distCoeffs1 = 0.2036923;//radial distortion coefficient k1.
+                double distCoeffs2 = -0.2035773;//radial distortion coefficient k2.
+                double distCoeffs3 = 0.0;//tangential distortion coefficient p1.
+                double distCoeffs4 = 0.0;//tangential distortion coefficient p2.
+                double distCoeffs5 = -0.2388065;//radial distortion coefficient k3.
+
+                camMatrix = CreateCameraMatrix(fx, fy, cx / DOWNSCALE_RATIO, cy / DOWNSCALE_RATIO);
+                distCoeffs = new MatOfDouble(distCoeffs1, distCoeffs2, distCoeffs3, distCoeffs4, distCoeffs5);
+
+                Debug.Log("Created a dummy CameraParameters (896x504).");
+
+                DebugUtils.AddDebugStr("Created a dummy CameraParameters (896x504).");
+#endif
             }
 
             Debug.Log("camMatrix " + camMatrix.dump());
             Debug.Log("distCoeffs " + distCoeffs.dump());
+
+            //DebugUtils.AddDebugStr("camMatrix " + camMatrix.dump());
+            //DebugUtils.AddDebugStr("distCoeffs " + distCoeffs.dump());
 
 
             //Calibration camera
@@ -398,7 +436,6 @@ namespace HoloLensWithOpenCVForUnityExample
             // Display objects near the camera.
             arCamera.nearClipPlane = 0.01f;
 
-            grayMat = new Mat();
             ids = new Mat();
             corners = new List<Mat>();
             rejectedCorners = new List<Mat>();
@@ -419,10 +456,9 @@ namespace HoloLensWithOpenCVForUnityExample
             dictionary = Aruco.getPredefinedDictionary(Aruco.DICT_6X6_250);
 
 
-            //If WebCamera is frontFaceing,flip Mat.
-            webCamTextureToMatHelper.flipHorizontal = webCamTextureToMatHelper.GetWebCamDevice().isFrontFacing;
+            //If WebCamera is frontFaceing, flip Mat.
+            webCamTextureToMatHelper.flipHorizontal = webCamTextureToMatHelper.IsFrontFacing();
 
-            downScaleFrameMat = new Mat((int)height, (int)width, CvType.CV_8UC4);
             rgbMat4preview = new Mat();
         }
 
@@ -433,18 +469,31 @@ namespace HoloLensWithOpenCVForUnityExample
         {
             Debug.Log("OnWebCamTextureToMatHelperDisposed");
 
-#if !WINDOWS_UWP || DISABLE_HOLOLENSCAMSTREAM_API
+#if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
+
+            while (isDetectingInFrameArrivedThread)
+            {
+                //Wait detecting stop
+            }
+
+            lock (ExecuteOnMainThread)
+            {
+                ExecuteOnMainThread.Clear();
+            }
+
+#else
+
             StopThread();
             lock (ExecuteOnMainThread)
             {
                 ExecuteOnMainThread.Clear();
             }
             isDetecting = false;
+
 #endif
+
             hasUpdatedARTransformMatrix = false;
 
-            if (grayMat != null)
-                grayMat.Dispose();
             if (ids != null)
                 ids.Dispose();
             foreach (var item in corners)
@@ -466,6 +515,12 @@ namespace HoloLensWithOpenCVForUnityExample
 
             if (rgbMat4preview != null)
                 rgbMat4preview.Dispose();
+
+            if (debugStr != null)
+            {
+                debugStr.text = string.Empty;
+            }
+            DebugUtils.ClearDebugStr();
         }
 
         /// <summary>
@@ -478,16 +533,42 @@ namespace HoloLensWithOpenCVForUnityExample
         }
 
 #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
-        public void OnFrameMatAcquired(Mat bgraMat, Matrix4x4 projectionMatrix, Matrix4x4 cameraToWorldMatrix)
+        public void OnFrameMatAcquired(Mat grayMat, Matrix4x4 projectionMatrix, Matrix4x4 cameraToWorldMatrix, CameraIntrinsics cameraIntrinsics)
         {
-            downScaleFrameMat = imageOptimizationHelper.GetDownScaleMat(bgraMat);
+            isDetectingInFrameArrivedThread = true;
+
+            DebugUtils.VideoTick();
+
+            Mat downScaleMat = null;
+            float DOWNSCALE_RATIO;
+            if (enableDownScale)
+            {
+                downScaleMat = imageOptimizationHelper.GetDownScaleMat(grayMat);
+                DOWNSCALE_RATIO = imageOptimizationHelper.downscaleRatio;
+            }
+            else
+            {
+                downScaleMat = grayMat;
+                DOWNSCALE_RATIO = 1.0f;
+            }
+
+            Mat camMatrix = null;
+            MatOfDouble distCoeffs = null;
+            if (useStoredCameraParameters)
+            {
+                camMatrix = this.camMatrix;
+                distCoeffs = this.distCoeffs;
+            }
+            else
+            {
+                camMatrix = CreateCameraMatrix(cameraIntrinsics.FocalLengthX, cameraIntrinsics.FocalLengthY, cameraIntrinsics.PrincipalPointX / DOWNSCALE_RATIO, cameraIntrinsics.PrincipalPointY / DOWNSCALE_RATIO);
+                distCoeffs = new MatOfDouble(cameraIntrinsics.RadialDistK1, cameraIntrinsics.RadialDistK2, cameraIntrinsics.RadialDistK3, cameraIntrinsics.TangentialDistP1, cameraIntrinsics.TangentialDistP2);
+            }
 
             if (enableDetection)
             {
-                Imgproc.cvtColor(downScaleFrameMat, grayMat, Imgproc.COLOR_BGRA2GRAY);
-
                 // Detect markers and estimate Pose
-                Aruco.detectMarkers(grayMat, dictionary, corners, ids, detectorParams, rejectedCorners, camMatrix, distCoeffs);
+                Aruco.detectMarkers(downScaleMat, dictionary, corners, ids, detectorParams, rejectedCorners, camMatrix, distCoeffs);
 
                 if (applyEstimationPose && ids.total() > 0)
                 {
@@ -503,15 +584,8 @@ namespace HoloLensWithOpenCVForUnityExample
                             rvecs.get(0, 0, rvecArr);
                             double[] tvecArr = new double[3];
                             tvecs.get(0, 0, tvecArr);
-                            tvecArr[2] /= imageOptimizationHelper.downscaleRatio;
+                            tvecArr[2] /= DOWNSCALE_RATIO;
                             PoseData poseData = ARUtils.ConvertRvecTvecToPoseData(rvecArr, tvecArr);
-
-                            // Changes in pos/rot below these thresholds are ignored.
-                            if (enableLowPassFilter)
-                            {
-                                ARUtils.LowpassPoseData(ref oldPoseData, ref poseData, positionLowPass, rotationLowPass);
-                            }
-                            oldPoseData = poseData;
 
                             // Create transform matrix.
                             transformationM = Matrix4x4.TRS(poseData.pos, poseData.rot, Vector3.one);
@@ -537,7 +611,7 @@ namespace HoloLensWithOpenCVForUnityExample
             if (displayCameraPreview)
             {
                 rgbMat4preview = new Mat();
-                Imgproc.cvtColor(downScaleFrameMat, rgbMat4preview, Imgproc.COLOR_BGRA2RGB);
+                Imgproc.cvtColor(downScaleMat, rgbMat4preview, Imgproc.COLOR_GRAY2RGB);
 
                 if (ids.total() > 0)
                 {
@@ -550,14 +624,15 @@ namespace HoloLensWithOpenCVForUnityExample
                             using (Mat rvec = new Mat(rvecs, new OpenCVForUnity.CoreModule.Rect(0, i, 1, 1)))
                             using (Mat tvec = new Mat(tvecs, new OpenCVForUnity.CoreModule.Rect(0, i, 1, 1)))
                             {
-
                                 // In this example we are processing with RGB color image, so Axis-color correspondences are X: blue, Y: green, Z: red. (Usually X: red, Y: green, Z: blue)
-                                Aruco.drawAxis(rgbMat4preview, camMatrix, distCoeffs, rvec, tvec, markerLength * 0.5f);
+                                Calib3d.drawFrameAxes(rgbMat4preview, camMatrix, distCoeffs, rvec, tvec, markerLength * 0.5f);
                             }
                         }
                     }
                 }
             }
+
+            DebugUtils.TrackTick();
 
             Enqueue(() =>
             {
@@ -566,6 +641,7 @@ namespace HoloLensWithOpenCVForUnityExample
                 if (displayCameraPreview && rgbMat4preview != null)
                 {
                     Utils.fastMatToTexture2D(rgbMat4preview, texture);
+                    rgbMat4preview.Dispose();
                 }
 
                 if (applyEstimationPose)
@@ -579,18 +655,22 @@ namespace HoloLensWithOpenCVForUnityExample
                             // Apply camera transform matrix.
                             ARM = cameraToWorldMatrix * invertZM * ARM;
 
-                            ARUtils.SetTransformFromMatrix(arGameObject.transform, ref ARM);
+                            if (enableLerpFilter)
+                            {
+                                arGameObject.SetMatrix4x4(ARM);
+                            }
+                            else
+                            {
+                                ARUtils.SetTransformFromMatrix(arGameObject.transform, ref ARM);
+                            }
                         }
                     }
                 }
 
-                bgraMat.Dispose();
-                if (rgbMat4preview != null)
-                {
-                    rgbMat4preview.Dispose();
-                }
-
+                grayMat.Dispose();
             });
+
+            isDetectingInFrameArrivedThread = false;
         }
 
         private void Update()
@@ -627,12 +707,24 @@ namespace HoloLensWithOpenCVForUnityExample
 
             if (webCamTextureToMatHelper.IsPlaying() && webCamTextureToMatHelper.DidUpdateThisFrame())
             {
+                DebugUtils.VideoTick();
 
                 if (enableDetection && !isDetecting)
                 {
                     isDetecting = true;
 
-                    downScaleFrameMat = imageOptimizationHelper.GetDownScaleMat(webCamTextureToMatHelper.GetMat());
+                    Mat grayMat = webCamTextureToMatHelper.GetMat();
+
+                    if (enableDownScale)
+                    {
+                        downScaleMat = imageOptimizationHelper.GetDownScaleMat(grayMat);
+                        DOWNSCALE_RATIO = imageOptimizationHelper.downscaleRatio;
+                    }
+                    else
+                    {
+                        downScaleMat = grayMat;
+                        DOWNSCALE_RATIO = 1.0f;
+                    }
 
                     StartThread(ThreadWorker);
                 }
@@ -681,10 +773,8 @@ namespace HoloLensWithOpenCVForUnityExample
 
         private void DetectARUcoMarker()
         {
-            Imgproc.cvtColor(downScaleFrameMat, grayMat, Imgproc.COLOR_RGBA2GRAY);
-
             // Detect markers and estimate Pose
-            Aruco.detectMarkers(grayMat, dictionary, corners, ids, detectorParams, rejectedCorners, camMatrix, distCoeffs);
+            Aruco.detectMarkers(downScaleMat, dictionary, corners, ids, detectorParams, rejectedCorners, camMatrix, distCoeffs);
 
             if (applyEstimationPose && ids.total() > 0)
             {
@@ -700,15 +790,8 @@ namespace HoloLensWithOpenCVForUnityExample
                         rvecs.get(0, 0, rvecArr);
                         double[] tvecArr = new double[3];
                         tvecs.get(0, 0, tvecArr);
-                        tvecArr[2] /= imageOptimizationHelper.downscaleRatio;
+                        tvecArr[2] /= DOWNSCALE_RATIO;
                         PoseData poseData = ARUtils.ConvertRvecTvecToPoseData(rvecArr, tvecArr);
-
-                        // Changes in pos/rot below these thresholds are ignored.
-                        if (enableLowPassFilter)
-                        {
-                            ARUtils.LowpassPoseData(ref oldPoseData, ref poseData, positionLowPass, rotationLowPass);
-                        }
-                        oldPoseData = poseData;
 
                         // Create transform matrix.
                         transformationM = Matrix4x4.TRS(poseData.pos, poseData.rot, Vector3.one);
@@ -730,9 +813,11 @@ namespace HoloLensWithOpenCVForUnityExample
 
         private void OnDetectionDone()
         {
+            DebugUtils.TrackTick();
+
             if (displayCameraPreview)
             {
-                Imgproc.cvtColor(downScaleFrameMat, rgbMat4preview, Imgproc.COLOR_RGBA2RGB);
+                Imgproc.cvtColor(downScaleMat, rgbMat4preview, Imgproc.COLOR_GRAY2RGB);
 
                 if (ids.total() > 0)
                 {
@@ -745,9 +830,8 @@ namespace HoloLensWithOpenCVForUnityExample
                             using (Mat rvec = new Mat(rvecs, new OpenCVForUnity.CoreModule.Rect(0, i, 1, 1)))
                             using (Mat tvec = new Mat(tvecs, new OpenCVForUnity.CoreModule.Rect(0, i, 1, 1)))
                             {
-
                                 // In this example we are processing with RGB color image, so Axis-color correspondences are X: blue, Y: green, Z: red. (Usually X: red, Y: green, Z: blue)
-                                Aruco.drawAxis(rgbMat4preview, camMatrix, distCoeffs, rvec, tvec, markerLength * 0.5f);
+                                Calib3d.drawFrameAxes(rgbMat4preview, camMatrix, distCoeffs, rvec, tvec, markerLength * 0.5f);
                             }
                         }
                     }
@@ -765,7 +849,14 @@ namespace HoloLensWithOpenCVForUnityExample
                     // Apply the cameraToWorld matrix with the Z-axis inverted.
                     ARM = arCamera.cameraToWorldMatrix * invertZM * ARM;
 
-                    ARUtils.SetTransformFromMatrix(arGameObject.transform, ref ARM);
+                    if (enableLerpFilter)
+                    {
+                        arGameObject.SetMatrix4x4(ARM);
+                    }
+                    else
+                    {
+                        ARUtils.SetTransformFromMatrix(arGameObject.transform, ref ARM);
+                    }
                 }
             }
 
@@ -773,16 +864,64 @@ namespace HoloLensWithOpenCVForUnityExample
         }
 #endif
 
+        private Mat CreateCameraMatrix(double fx, double fy, double cx, double cy)
+        {
+            Mat camMatrix = new Mat(3, 3, CvType.CV_64FC1);
+            camMatrix.put(0, 0, fx);
+            camMatrix.put(0, 1, 0);
+            camMatrix.put(0, 2, cx);
+            camMatrix.put(1, 0, 0);
+            camMatrix.put(1, 1, fy);
+            camMatrix.put(1, 2, cy);
+            camMatrix.put(2, 0, 0);
+            camMatrix.put(2, 1, 0);
+            camMatrix.put(2, 2, 1.0f);
+
+            return camMatrix;
+        }
+
+        void LateUpdate()
+        {
+            DebugUtils.RenderTick();
+            float renderDeltaTime = DebugUtils.GetRenderDeltaTime();
+            float videoDeltaTime = DebugUtils.GetVideoDeltaTime();
+            float trackDeltaTime = DebugUtils.GetTrackDeltaTime();
+
+            if (renderFPS != null)
+            {
+                renderFPS.text = string.Format("Render: {0:0.0} ms ({1:0.} fps)", renderDeltaTime, 1000.0f / renderDeltaTime);
+            }
+            if (videoFPS != null)
+            {
+                videoFPS.text = string.Format("Video: {0:0.0} ms ({1:0.} fps)", videoDeltaTime, 1000.0f / videoDeltaTime);
+            }
+            if (trackFPS != null)
+            {
+                trackFPS.text = string.Format("Track:   {0:0.0} ms ({1:0.} fps)", trackDeltaTime, 1000.0f / trackDeltaTime);
+            }
+            if (debugStr != null)
+            {
+                if (DebugUtils.GetDebugStrLength() > 0)
+                {
+                    if (debugStr.preferredHeight >= debugStr.rectTransform.rect.height)
+                        debugStr.text = string.Empty;
+
+                    debugStr.text += DebugUtils.GetDebugStr();
+                    DebugUtils.ClearDebugStr();
+                }
+            }
+        }
+
         /// <summary>
         /// Raises the destroy event.
         /// </summary>
         void OnDestroy()
         {
-            imageOptimizationHelper.Dispose();
 #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
             webCamTextureToMatHelper.frameMatAcquired -= OnFrameMatAcquired;
 #endif
             webCamTextureToMatHelper.Dispose();
+            imageOptimizationHelper.Dispose();
         }
 
         /// <summary>
@@ -830,14 +969,8 @@ namespace HoloLensWithOpenCVForUnityExample
         /// </summary>
         public void OnDisplayCamreaPreviewToggleValueChanged()
         {
-            if (displayCameraPreviewToggle.isOn)
-            {
-                displayCameraPreview = true;
-            }
-            else
-            {
-                displayCameraPreview = false;
-            }
+            displayCameraPreview = displayCameraPreviewToggle.isOn;
+
             previewQuad.SetActive(displayCameraPreview);
         }
 
@@ -846,14 +979,7 @@ namespace HoloLensWithOpenCVForUnityExample
         /// </summary>
         public void OnUseStoredCameraParametersToggleValueChanged()
         {
-            if (useStoredCameraParametersToggle.isOn)
-            {
-                useStoredCameraParameters = true;
-            }
-            else
-            {
-                useStoredCameraParameters = false;
-            }
+            useStoredCameraParameters = useStoredCameraParametersToggle.isOn;
 
             if (webCamTextureToMatHelper != null && webCamTextureToMatHelper.IsInitialized())
             {
@@ -862,44 +988,24 @@ namespace HoloLensWithOpenCVForUnityExample
         }
 
         /// <summary>
-        /// Raises the enable low pass filter toggle value changed event.
+        /// Raises the enable downscale toggle value changed event.
         /// </summary>
-        public void OnEnableLowPassFilterToggleValueChanged()
+        public void OnEnableDownScaleToggleValueChanged()
         {
-            if (enableLowPassFilterToggle.isOn)
+            enableDownScale = enableDownScaleToggle.isOn;
+
+            if (webCamTextureToMatHelper != null && webCamTextureToMatHelper.IsInitialized())
             {
-                enableLowPassFilter = true;
-            }
-            else
-            {
-                enableLowPassFilter = false;
+                webCamTextureToMatHelper.Initialize();
             }
         }
 
         /// <summary>
-        /// Raises the tapped event.
+        /// Raises the enable lerp filter toggle value changed event.
         /// </summary>
-        public void OnTapped(MixedRealityPointerEventData eventData)
+        public void OnEnableLerpFilterToggleValueChanged()
         {
-            Debug.Log("OnTapped!");
-
-            // Determine if a Gaze pointer is over a GUI.
-            if (eventData.selectedObject != null && (eventData.selectedObject.GetComponent<Button>() != null || eventData.selectedObject.GetComponent<Toggle>() != null
-                 || eventData.selectedObject.GetComponent<Text>() != null || eventData.selectedObject.GetComponent<Image>() != null))
-            {
-                return;
-            }
-
-            if (applyEstimationPose)
-            {
-                applyEstimationPose = false;
-                arCube.GetComponent<MeshRenderer>().material.color = Color.gray;
-            }
-            else
-            {
-                applyEstimationPose = true;
-                arCube.GetComponent<MeshRenderer>().material.color = Color.red;
-            }
+            enableLerpFilter = enableLerpFilterToggle.isOn;
         }
     }
 }

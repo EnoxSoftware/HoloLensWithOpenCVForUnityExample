@@ -7,8 +7,8 @@ using OpenCVForUnity.CoreModule;
 using OpenCVForUnity.ImgprocModule;
 using OpenCVForUnity.UnityUtils.Helper;
 using OpenCVForUnity.UnityUtils;
-using Rect = OpenCVForUnity.CoreModule.Rect;
 using HoloLensWithOpenCVForUnity.UnityUtils.Helper;
+using HoloLensCameraStream;
 
 namespace HoloLensWithOpenCVForUnityExample
 {
@@ -45,51 +45,56 @@ namespace HoloLensWithOpenCVForUnityExample
 
         readonly static Queue<Action> ExecuteOnMainThread = new Queue<Action>();
 
-        // Use this for initialization
-        protected void Start ()
-        {
-            webCamTextureToMatHelper = gameObject.GetComponent<HololensCameraStreamToMatHelper> ();
-            #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
-            webCamTextureToMatHelper.frameMatAcquired += OnFrameMatAcquired;
-            #endif
-            webCamTextureToMatHelper.Initialize ();
 
+        [HeaderAttribute("Debug")]
+
+        public Text renderFPS;
+        public Text videoFPS;
+        public Text trackFPS;
+        public Text debugStr;
+
+
+        // Use this for initialization
+        protected void Start()
+        {
             VignetteScaleSlider.value = vignetteScale;
+
+            webCamTextureToMatHelper = gameObject.GetComponent<HololensCameraStreamToMatHelper>();
+#if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
+            webCamTextureToMatHelper.frameMatAcquired += OnFrameMatAcquired;
+#endif
+            webCamTextureToMatHelper.outputColorFormat = WebCamTextureToMatHelper.ColorFormat.GRAY;
+            webCamTextureToMatHelper.Initialize();
         }
 
         /// <summary>
         /// Raises the web cam texture to mat helper initialized event.
         /// </summary>
-        public void OnWebCamTextureToMatHelperInitialized ()
+        public void OnWebCamTextureToMatHelperInitialized()
         {
-            Debug.Log ("OnWebCamTextureToMatHelperInitialized");
-        
-            Mat webCamTextureMat = webCamTextureToMatHelper.GetMat ();
+            Debug.Log("OnWebCamTextureToMatHelperInitialized");
 
+            Mat grayMat = webCamTextureToMatHelper.GetMat();
 
-            #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
-            // HololensCameraStream always returns image data in BGRA format.
-            texture = new Texture2D (webCamTextureMat.cols (), webCamTextureMat.rows (), TextureFormat.BGRA32, false);
-            #else
-            texture = new Texture2D (webCamTextureMat.cols (), webCamTextureMat.rows (), TextureFormat.RGBA32, false);
-            #endif
-
+            texture = new Texture2D(grayMat.cols(), grayMat.rows(), TextureFormat.Alpha8, false);
             texture.wrapMode = TextureWrapMode.Clamp;
+            quad_renderer = gameObject.GetComponent<Renderer>() as Renderer;
+            quad_renderer.sharedMaterial.SetTexture("_MainTex", texture);
 
-            Debug.Log ("Screen.width " + Screen.width + " Screen.height " + Screen.height + " Screen.orientation " + Screen.orientation);
-        
-            comicFilter = new ComicFilter(60, 120, 3);
 
-            quad_renderer = gameObject.GetComponent<Renderer> () as Renderer;
-            quad_renderer.sharedMaterial.SetTexture ("_MainTex", texture);
+            //Debug.Log("Screen.width " + Screen.width + " Screen.height " + Screen.height + " Screen.orientation " + Screen.orientation);
+
+
+            DebugUtils.AddDebugStr(webCamTextureToMatHelper.GetWidth() + " x " + webCamTextureToMatHelper.GetHeight() + " : " + webCamTextureToMatHelper.GetFPS());
+
 
             Matrix4x4 projectionMatrix;
-            #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
+#if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
             projectionMatrix = webCamTextureToMatHelper.GetProjectionMatrix ();
             quad_renderer.sharedMaterial.SetMatrix ("_CameraProjectionMatrix", projectionMatrix);
-            #else
-            //This value is obtained from PhotoCapture's TryGetProjectionMatrix() method.I do not know whether this method is good.
-            //Please see the discussion of this thread.Https://forums.hololens.com/discussion/782/live-stream-of-locatable-camera-webcam-in-unity
+#else
+            // This value is obtained from PhotoCapture's TryGetProjectionMatrix() method. I do not know whether this method is good.
+            // Please see the discussion of this thread. Https://forums.hololens.com/discussion/782/live-stream-of-locatable-camera-webcam-in-unity
             projectionMatrix = Matrix4x4.identity;
             projectionMatrix.m00 = 2.31029f;
             projectionMatrix.m01 = 0.00000f;
@@ -107,24 +112,26 @@ namespace HoloLensWithOpenCVForUnityExample
             projectionMatrix.m31 = 0.00000f;
             projectionMatrix.m32 = -1.00000f;
             projectionMatrix.m33 = 0.00000f;
-            quad_renderer.sharedMaterial.SetMatrix ("_CameraProjectionMatrix", projectionMatrix);
-            #endif
+            quad_renderer.sharedMaterial.SetMatrix("_CameraProjectionMatrix", projectionMatrix);
+#endif
 
-            quad_renderer.sharedMaterial.SetFloat ("_VignetteScale", vignetteScale);
+            quad_renderer.sharedMaterial.SetFloat("_VignetteScale", vignetteScale);
 
 
-            float halfOfVerticalFov = Mathf.Atan (1.0f / projectionMatrix.m11);
-            float aspectRatio = (1.0f / Mathf.Tan (halfOfVerticalFov)) / projectionMatrix.m00;
-            Debug.Log ("halfOfVerticalFov " + halfOfVerticalFov);
-            Debug.Log ("aspectRatio " + aspectRatio);
+            float halfOfVerticalFov = Mathf.Atan(1.0f / projectionMatrix.m11);
+            float aspectRatio = (1.0f / Mathf.Tan(halfOfVerticalFov)) / projectionMatrix.m00;
+            Debug.Log("halfOfVerticalFov " + halfOfVerticalFov);
+            Debug.Log("aspectRatio " + aspectRatio);
+
+            comicFilter = new ComicFilter(60, 120, 3);
         }
 
         /// <summary>
         /// Raises the web cam texture to mat helper disposed event.
         /// </summary>
-        public void OnWebCamTextureToMatHelperDisposed ()
+        public void OnWebCamTextureToMatHelperDisposed()
         {
-            Debug.Log ("OnWebCamTextureToMatHelperDisposed");
+            Debug.Log("OnWebCamTextureToMatHelperDisposed");
 
             lock (ExecuteOnMainThread)
             {
@@ -132,41 +139,52 @@ namespace HoloLensWithOpenCVForUnityExample
             }
 
             comicFilter.Dispose();
+
+            if (debugStr != null)
+            {
+                debugStr.text = string.Empty;
+            }
+            DebugUtils.ClearDebugStr();
         }
 
         /// <summary>
         /// Raises the web cam texture to mat helper error occurred event.
         /// </summary>
         /// <param name="errorCode">Error code.</param>
-        public void OnWebCamTextureToMatHelperErrorOccurred(WebCamTextureToMatHelper.ErrorCode errorCode){
-            Debug.Log ("OnWebCamTextureToMatHelperErrorOccurred " + errorCode);
+        public void OnWebCamTextureToMatHelperErrorOccurred(WebCamTextureToMatHelper.ErrorCode errorCode)
+        {
+            Debug.Log("OnWebCamTextureToMatHelperErrorOccurred " + errorCode);
         }
 
 #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
-        public void OnFrameMatAcquired (Mat bgraMat, Matrix4x4 projectionMatrix, Matrix4x4 cameraToWorldMatrix)
+        public void OnFrameMatAcquired(Mat grayMat, Matrix4x4 projectionMatrix, Matrix4x4 cameraToWorldMatrix, CameraIntrinsics cameraIntrinsics)
         {
-            comicFilter.Process(bgraMat, bgraMat, true);
+            DebugUtils.VideoTick();
 
-            //Imgproc.putText (bgraMat, "W:" + bgraMat.width () + " H:" + bgraMat.height () + " SO:" + Screen.orientation, new Point (5, bgraMat.rows () - 10), Imgproc.FONT_HERSHEY_SIMPLEX, 1.0, new Scalar (0), 2, Imgproc.LINE_AA, false);
+            comicFilter.Process(grayMat, grayMat, true);
 
+            //Imgproc.putText(grayMat, "W:" + grayMat.width() + " H:" + grayMat.height() + " SO:" + Screen.orientation, new Point(5, grayMat.rows() - 10), Imgproc.FONT_HERSHEY_SIMPLEX, 1.0, new Scalar(255), 2, Imgproc.LINE_AA, false);
 
-            Enqueue(() => {
+            DebugUtils.TrackTick();
 
-                if (!webCamTextureToMatHelper.IsPlaying ()) return;
+            Enqueue(() =>
+            {
 
-                Utils.fastMatToTexture2D(bgraMat, texture);
-                bgraMat.Dispose ();
+                if (!webCamTextureToMatHelper.IsPlaying()) return;
+
+                Utils.fastMatToTexture2D(grayMat, texture);
+                grayMat.Dispose();
 
                 Matrix4x4 worldToCameraMatrix = cameraToWorldMatrix.inverse;
 
-                quad_renderer.sharedMaterial.SetMatrix ("_WorldToCameraMatrix", worldToCameraMatrix);
+                quad_renderer.sharedMaterial.SetMatrix("_WorldToCameraMatrix", worldToCameraMatrix);
 
                 // Position the canvas object slightly in front
                 // of the real world web camera.
                 Vector3 position = cameraToWorldMatrix.GetColumn(3) - cameraToWorldMatrix.GetColumn(2) * 2.2f;
 
                 // Rotate the canvas object so that it faces the user.
-                Quaternion rotation = Quaternion.LookRotation (-cameraToWorldMatrix.GetColumn (2), cameraToWorldMatrix.GetColumn (1));
+                Quaternion rotation = Quaternion.LookRotation(-cameraToWorldMatrix.GetColumn(2), cameraToWorldMatrix.GetColumn(1));
 
                 gameObject.transform.position = position;
                 gameObject.transform.rotation = rotation;
@@ -196,54 +214,91 @@ namespace HoloLensWithOpenCVForUnityExample
 #else
 
         // Update is called once per frame
-        void Update ()
+        void Update()
         {
-            if (webCamTextureToMatHelper.IsPlaying () && webCamTextureToMatHelper.DidUpdateThisFrame ()) {
+            if (webCamTextureToMatHelper.IsPlaying() && webCamTextureToMatHelper.DidUpdateThisFrame())
+            {
+                DebugUtils.VideoTick();
 
-                Mat rgbaMat = webCamTextureToMatHelper.GetMat ();
+                Mat grayMat = webCamTextureToMatHelper.GetMat();
 
-                comicFilter.Process(rgbaMat, rgbaMat, false);
+                comicFilter.Process(grayMat, grayMat, false);
 
-                //Imgproc.putText (rgbaMat, "W:" + rgbaMat.width () + " H:" + rgbaMat.height () + " SO:" + Screen.orientation, new Point (5, rgbaMat.rows () - 10), Imgproc.FONT_HERSHEY_SIMPLEX, 1.0, new Scalar (0), 2, Imgproc.LINE_AA, false);
+                //Imgproc.putText(grayMat, "W:" + grayMat.width() + " H:" + grayMat.height() + " SO:" + Screen.orientation, new Point(5, grayMat.rows() - 10), Imgproc.FONT_HERSHEY_SIMPLEX, 1.0, new Scalar(255), 2, Imgproc.LINE_AA, false);
 
-                Utils.fastMatToTexture2D(rgbaMat, texture);
+                DebugUtils.TrackTick();
+
+                Utils.fastMatToTexture2D(grayMat, texture);
             }
 
-            if (webCamTextureToMatHelper.IsPlaying ()) {
+            if (webCamTextureToMatHelper.IsPlaying())
+            {
 
                 Matrix4x4 cameraToWorldMatrix = webCamTextureToMatHelper.GetCameraToWorldMatrix();
                 Matrix4x4 worldToCameraMatrix = cameraToWorldMatrix.inverse;
 
-                quad_renderer.sharedMaterial.SetMatrix ("_WorldToCameraMatrix", worldToCameraMatrix);
+                quad_renderer.sharedMaterial.SetMatrix("_WorldToCameraMatrix", worldToCameraMatrix);
 
                 // Position the canvas object slightly in front
                 // of the real world web camera.
                 Vector3 position = cameraToWorldMatrix.GetColumn(3) - cameraToWorldMatrix.GetColumn(2) * 2.2f;
 
                 // Rotate the canvas object so that it faces the user.
-                Quaternion rotation = Quaternion.LookRotation (-cameraToWorldMatrix.GetColumn (2), cameraToWorldMatrix.GetColumn (1));
+                Quaternion rotation = Quaternion.LookRotation(-cameraToWorldMatrix.GetColumn(2), cameraToWorldMatrix.GetColumn(1));
 
                 gameObject.transform.position = position;
                 gameObject.transform.rotation = rotation;
             }
         }
-        #endif
+#endif
+
+        void LateUpdate()
+        {
+            DebugUtils.RenderTick();
+            float renderDeltaTime = DebugUtils.GetRenderDeltaTime();
+            float videoDeltaTime = DebugUtils.GetVideoDeltaTime();
+            float trackDeltaTime = DebugUtils.GetTrackDeltaTime();
+
+            if (renderFPS != null)
+            {
+                renderFPS.text = string.Format("Render: {0:0.0} ms ({1:0.} fps)", renderDeltaTime, 1000.0f / renderDeltaTime);
+            }
+            if (videoFPS != null)
+            {
+                videoFPS.text = string.Format("Video: {0:0.0} ms ({1:0.} fps)", videoDeltaTime, 1000.0f / videoDeltaTime);
+            }
+            if (trackFPS != null)
+            {
+                trackFPS.text = string.Format("Track:   {0:0.0} ms ({1:0.} fps)", trackDeltaTime, 1000.0f / trackDeltaTime);
+            }
+            if (debugStr != null)
+            {
+                if (DebugUtils.GetDebugStrLength() > 0)
+                {
+                    if (debugStr.preferredHeight >= debugStr.rectTransform.rect.height)
+                        debugStr.text = string.Empty;
+
+                    debugStr.text += DebugUtils.GetDebugStr();
+                    DebugUtils.ClearDebugStr();
+                }
+            }
+        }
 
         /// <summary>
         /// Raises the destroy event.
         /// </summary>
-        void OnDestroy ()
+        void OnDestroy()
         {
-            #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
+#if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
             webCamTextureToMatHelper.frameMatAcquired -= OnFrameMatAcquired;
-            #endif
-            webCamTextureToMatHelper.Dispose ();
+#endif
+            webCamTextureToMatHelper.Dispose();
         }
 
         /// <summary>
         /// Raises the back button click event.
         /// </summary>
-        public void OnBackButtonClick ()
+        public void OnBackButtonClick()
         {
             SceneManager.LoadScene("HoloLensWithOpenCVForUnityExample");
         }
@@ -251,31 +306,31 @@ namespace HoloLensWithOpenCVForUnityExample
         /// <summary>
         /// Raises the play button click event.
         /// </summary>
-        public void OnPlayButtonClick ()
+        public void OnPlayButtonClick()
         {
-            webCamTextureToMatHelper.Play ();
+            webCamTextureToMatHelper.Play();
         }
 
         /// <summary>
         /// Raises the pause button click event.
         /// </summary>
-        public void OnPauseButtonClick ()
+        public void OnPauseButtonClick()
         {
-            webCamTextureToMatHelper.Pause ();
+            webCamTextureToMatHelper.Pause();
         }
 
         /// <summary>
         /// Raises the stop button click event.
         /// </summary>
-        public void OnStopButtonClick ()
+        public void OnStopButtonClick()
         {
-            webCamTextureToMatHelper.Stop ();
+            webCamTextureToMatHelper.Stop();
         }
 
         /// <summary>
         /// Raises the change camera button click event.
         /// </summary>
-        public void OnChangeCameraButtonClick ()
+        public void OnChangeCameraButtonClick()
         {
             webCamTextureToMatHelper.requestedIsFrontFacing = !webCamTextureToMatHelper.IsFrontFacing();
         }

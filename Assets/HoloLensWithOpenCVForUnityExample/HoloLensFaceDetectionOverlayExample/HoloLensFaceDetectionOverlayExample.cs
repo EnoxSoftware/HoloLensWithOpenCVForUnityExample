@@ -12,6 +12,7 @@ using OpenCVForUnity.UnityUtils.Helper;
 using OpenCVForUnity.ImgprocModule;
 using Rect = OpenCVForUnity.CoreModule.Rect;
 using HoloLensWithOpenCVForUnity.UnityUtils.Helper;
+using HoloLensCameraStream;
 
 namespace HoloLensWithOpenCVForUnityExample
 {
@@ -20,23 +21,13 @@ namespace HoloLensWithOpenCVForUnityExample
     /// An example of overlay display of face area rectangles using OpenCVForUnity on Hololens.
     /// Referring to https://github.com/Itseez/opencv/blob/master/modules/objdetect/src/detection_based_tracker.cpp.
     /// </summary>
-    [RequireComponent(typeof(HololensCameraStreamToMatHelper))]
+    [RequireComponent(typeof(HololensCameraStreamToMatHelper), typeof(ImageOptimizationHelper))]
     public class HoloLensFaceDetectionOverlayExample : MonoBehaviour
     {
         /// <summary>
         /// Determines if enables the detection.
         /// </summary>
         public bool enableDetection = true;
-
-        /// <summary>
-        /// Determines if uses separate detection.
-        /// </summary>
-        public bool useSeparateDetection = false;
-
-        /// <summary>
-        /// The use separate detection toggle.
-        /// </summary>
-        public Toggle useSeparateDetectionToggle;
 
         /// <summary>
         /// Determines if enable downscale.
@@ -47,6 +38,16 @@ namespace HoloLensWithOpenCVForUnityExample
         /// The enable downscale toggle.
         /// </summary>
         public Toggle enableDownScaleToggle;
+
+        /// <summary>
+        /// Determines if uses separate detection.
+        /// </summary>
+        public bool useSeparateDetection = false;
+
+        /// <summary>
+        /// The use separate detection toggle.
+        /// </summary>
+        public Toggle useSeparateDetectionToggle;
 
         /// <summary>
         /// The min detection size ratio.
@@ -69,11 +70,6 @@ namespace HoloLensWithOpenCVForUnityExample
         ImageOptimizationHelper imageOptimizationHelper;
 
         /// <summary>
-        /// The gray mat.
-        /// </summary>
-        Mat grayMat;
-
-        /// <summary>
         /// The cascade.
         /// </summary>
         CascadeClassifier cascade;
@@ -82,18 +78,6 @@ namespace HoloLensWithOpenCVForUnityExample
         /// The detection result.
         /// </summary>
         List<Rect> detectionResult = new List<Rect>();
-
-#if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
-        int CVTCOLOR_CODE = Imgproc.COLOR_BGRA2GRAY;
-        Scalar COLOR_RED = new Scalar(0, 0, 255, 255);
-        Scalar COLOR_GREEN = new Scalar(0, 255, 0, 255);
-        Scalar COLOR_BLUE = new Scalar(255, 0, 0, 255);
-#else
-        int CVTCOLOR_CODE = Imgproc.COLOR_RGBA2GRAY;
-        Scalar COLOR_RED = new Scalar(255, 0, 0, 255);
-        Scalar COLOR_GREEN = new Scalar(0, 255, 0, 255);
-        Scalar COLOR_BLUE = new Scalar(0, 0, 255, 255);
-#endif
 
         Mat grayMat4Thread;
         CascadeClassifier cascade4Thread;
@@ -151,24 +135,49 @@ namespace HoloLensWithOpenCVForUnityExample
             }
         }
 
+        bool _isDetectingInFrameArrivedThread = false;
+        bool isDetectingInFrameArrivedThread
+        {
+            get
+            {
+                lock (sync)
+                    return _isDetectingInFrameArrivedThread;
+            }
+            set
+            {
+                lock (sync)
+                    _isDetectingInFrameArrivedThread = value;
+            }
+        }
+
         Matrix4x4 projectionMatrix;
         RectOverlay rectOverlay;
+
+
+        [HeaderAttribute("Debug")]
+
+        public Text renderFPS;
+        public Text videoFPS;
+        public Text trackFPS;
+        public Text debugStr;
+
 
         // Use this for initialization
         protected void Start()
         {
+            enableDownScaleToggle.isOn = enableDownScale;
+            useSeparateDetectionToggle.isOn = useSeparateDetection;
+
             imageOptimizationHelper = gameObject.GetComponent<ImageOptimizationHelper>();
             webCamTextureToMatHelper = gameObject.GetComponent<HololensCameraStreamToMatHelper>();
 #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
             webCamTextureToMatHelper.frameMatAcquired += OnFrameMatAcquired;
 #endif
+            webCamTextureToMatHelper.outputColorFormat = WebCamTextureToMatHelper.ColorFormat.GRAY;
             webCamTextureToMatHelper.Initialize();
 
             rectangleTracker = new RectangleTracker();
             rectOverlay = gameObject.GetComponent<RectOverlay>();
-
-            useSeparateDetectionToggle.isOn = useSeparateDetection;
-            enableDownScaleToggle.isOn = enableDownScale;
         }
 
         /// <summary>
@@ -178,9 +187,15 @@ namespace HoloLensWithOpenCVForUnityExample
         {
             Debug.Log("OnWebCamTextureToMatHelperInitialized");
 
-            Mat webCamTextureMat = webCamTextureToMatHelper.GetMat();
+            Mat grayMat = webCamTextureToMatHelper.GetMat();
 
-            Debug.Log("Screen.width " + Screen.width + " Screen.height " + Screen.height + " Screen.orientation " + Screen.orientation);
+
+            //Debug.Log("Screen.width " + Screen.width + " Screen.height " + Screen.height + " Screen.orientation " + Screen.orientation);
+
+
+            DebugUtils.AddDebugStr(webCamTextureToMatHelper.GetWidth() + " x " + webCamTextureToMatHelper.GetHeight() + " : " + webCamTextureToMatHelper.GetFPS());
+            if (enableDownScale)
+                DebugUtils.AddDebugStr("enableDownScale = true: " + imageOptimizationHelper.downscaleRatio + " / " + webCamTextureToMatHelper.GetWidth() / imageOptimizationHelper.downscaleRatio + " x " + webCamTextureToMatHelper.GetHeight() / imageOptimizationHelper.downscaleRatio);
 
 
 #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
@@ -207,7 +222,6 @@ namespace HoloLensWithOpenCVForUnityExample
             projectionMatrix.m33 = 0.00000f;
 #endif
 
-            grayMat = new Mat();
             cascade = new CascadeClassifier();
             cascade.load(Utils.getFilePath("lbpcascade_frontalface.xml"));
 #if !UNITY_WSA_10_0 || UNITY_EDITOR
@@ -237,6 +251,14 @@ namespace HoloLensWithOpenCVForUnityExample
         {
             Debug.Log("OnWebCamTextureToMatHelperDisposed");
 
+#if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
+
+            while (isDetectingInFrameArrivedThread)
+            {
+                //Wait detecting stop
+            }
+#endif
+
             StopThread();
             lock (ExecuteOnMainThread)
             {
@@ -244,9 +266,6 @@ namespace HoloLensWithOpenCVForUnityExample
             }
             hasUpdatedDetectionResult = false;
             isDetecting = false;
-
-            if (grayMat != null)
-                grayMat.Dispose();
 
             if (cascade != null)
                 cascade.Dispose();
@@ -258,6 +277,12 @@ namespace HoloLensWithOpenCVForUnityExample
                 cascade4Thread.Dispose();
 
             rectangleTracker.Reset();
+
+            if (debugStr != null)
+            {
+                debugStr.text = string.Empty;
+            }
+            DebugUtils.ClearDebugStr();
         }
 
         /// <summary>
@@ -271,29 +296,32 @@ namespace HoloLensWithOpenCVForUnityExample
 
 
 #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
-        public void OnFrameMatAcquired(Mat bgraMat, Matrix4x4 projectionMatrix, Matrix4x4 cameraToWorldMatrix)
+        public void OnFrameMatAcquired(Mat grayMat, Matrix4x4 projectionMatrix, Matrix4x4 cameraToWorldMatrix, CameraIntrinsics cameraIntrinsics)
         {
+            isDetectingInFrameArrivedThread = true;
+
+            DebugUtils.VideoTick();
+
             Mat downScaleMat = null;
             float DOWNSCALE_RATIO;
             if (enableDownScale)
             {
-                downScaleMat = imageOptimizationHelper.GetDownScaleMat(bgraMat);
+                downScaleMat = imageOptimizationHelper.GetDownScaleMat(grayMat);
                 DOWNSCALE_RATIO = imageOptimizationHelper.downscaleRatio;
             }
             else
             {
-                downScaleMat = bgraMat;
+                downScaleMat = grayMat;
                 DOWNSCALE_RATIO = 1.0f;
             }
 
-            Imgproc.cvtColor(downScaleMat, grayMat, CVTCOLOR_CODE);
-            Imgproc.equalizeHist(grayMat, grayMat);
+            Imgproc.equalizeHist(downScaleMat, downScaleMat);
 
             if (enableDetection && !isDetecting)
             {
                 isDetecting = true;
 
-                grayMat.copyTo(grayMat4Thread);
+                downScaleMat.copyTo(grayMat4Thread);
 
                 System.Threading.Tasks.Task.Run(() =>
                 {
@@ -337,9 +365,10 @@ namespace HoloLensWithOpenCVForUnityExample
                 {
                     hasUpdatedDetectionResult = false;
 
-                    //UnityEngine.WSA.Application.InvokeOnAppThread (() => {
+                    //Enqueue(() =>
+                    //{
                     //    Debug.Log("process: get rectsWhereRegions were got from detectionResult");
-                    //}, true);
+                    //});
 
                     lock (rectangleTracker)
                     {
@@ -348,9 +377,10 @@ namespace HoloLensWithOpenCVForUnityExample
                 }
                 else
                 {
-                    //UnityEngine.WSA.Application.InvokeOnAppThread (() => {
+                    //Enqueue(() =>
+                    //{
                     //    Debug.Log("process: get rectsWhereRegions from previous positions");
-                    //}, true);
+                    //});
 
                     lock (rectangleTracker)
                     {
@@ -362,7 +392,7 @@ namespace HoloLensWithOpenCVForUnityExample
                 int len = rectsWhereRegions.Length;
                 for (int i = 0; i < len; i++)
                 {
-                    DetectInRegion(grayMat, rectsWhereRegions[i], detectedObjectsInRegions, cascade);
+                    DetectInRegion(downScaleMat, rectsWhereRegions[i], detectedObjectsInRegions, cascade);
                 }
 
                 lock (rectangleTracker)
@@ -389,12 +419,15 @@ namespace HoloLensWithOpenCVForUnityExample
                 }
             }
 
+            DebugUtils.TrackTick();
+
             Enqueue(() =>
             {
                 if (!webCamTextureToMatHelper.IsPlaying()) return;
 
-                DrawRects(rects, bgraMat.width(), bgraMat.height());
-                bgraMat.Dispose();
+                // draw face rect.
+                DrawRects(rects, grayMat.width(), grayMat.height());
+                grayMat.Dispose();
 
                 Vector3 ccCameraSpacePos = UnProjectVector(projectionMatrix, new Vector3(0.0f, 0.0f, overlayDistance));
                 Vector3 tlCameraSpacePos = UnProjectVector(projectionMatrix, new Vector3(-overlayDistance, overlayDistance, overlayDistance));
@@ -414,6 +447,8 @@ namespace HoloLensWithOpenCVForUnityExample
                 rectOverlay.UpdateOverlayTransform(gameObject.transform);
 
             });
+
+            isDetectingInFrameArrivedThread = false;
         }
 
         private void Update()
@@ -450,34 +485,35 @@ namespace HoloLensWithOpenCVForUnityExample
 
             if (webCamTextureToMatHelper.IsPlaying() && webCamTextureToMatHelper.DidUpdateThisFrame())
             {
+                DebugUtils.VideoTick();
 
-                Mat rgbaMat = webCamTextureToMatHelper.GetMat();
+                Mat grayMat = webCamTextureToMatHelper.GetMat();
 
                 Mat downScaleMat = null;
                 float DOWNSCALE_RATIO;
                 if (enableDownScale)
                 {
-                    downScaleMat = imageOptimizationHelper.GetDownScaleMat(rgbaMat);
+                    downScaleMat = imageOptimizationHelper.GetDownScaleMat(grayMat);
                     DOWNSCALE_RATIO = imageOptimizationHelper.downscaleRatio;
                 }
                 else
                 {
-                    downScaleMat = rgbaMat;
+                    downScaleMat = grayMat;
                     DOWNSCALE_RATIO = 1.0f;
                 }
 
-                Imgproc.cvtColor(downScaleMat, grayMat, CVTCOLOR_CODE);
-                Imgproc.equalizeHist(grayMat, grayMat);
+                Imgproc.equalizeHist(downScaleMat, downScaleMat);
 
                 if (enableDetection && !isDetecting)
                 {
                     isDetecting = true;
 
-                    grayMat.copyTo(grayMat4Thread);
+                    downScaleMat.copyTo(grayMat4Thread);
 
                     StartThread(ThreadWorker);
                 }
 
+                Rect[] rects;
                 if (!useSeparateDetection)
                 {
                     if (hasUpdatedDetectionResult)
@@ -489,26 +525,7 @@ namespace HoloLensWithOpenCVForUnityExample
 
                     rectangleTracker.GetObjects(resultObjects, true);
 
-                    Rect[] rects = resultObjects.ToArray();
-
-                    if (enableDownScale)
-                    {
-                        int len = rects.Length;
-                        for (int i = 0; i < len; i++)
-                        {
-                            Rect rect = rects[i];
-
-                            // restore to original size rect
-                            rect.x = (int)(rect.x * DOWNSCALE_RATIO);
-                            rect.y = (int)(rect.y * DOWNSCALE_RATIO);
-                            rect.width = (int)(rect.width * DOWNSCALE_RATIO);
-                            rect.height = (int)(rect.height * DOWNSCALE_RATIO);
-                        }
-                    }
-
-                    // draw face rect
-                    DrawRects(rects, rgbaMat.width(), rgbaMat.height());
-
+                    rects = resultObjects.ToArray();
                 }
                 else
                 {
@@ -532,32 +549,34 @@ namespace HoloLensWithOpenCVForUnityExample
                     int len = rectsWhereRegions.Length;
                     for (int i = 0; i < len; i++)
                     {
-                        DetectInRegion(grayMat, rectsWhereRegions[i], detectedObjectsInRegions, cascade);
+                        DetectInRegion(downScaleMat, rectsWhereRegions[i], detectedObjectsInRegions, cascade);
                     }
 
                     rectangleTracker.UpdateTrackedObjects(detectedObjectsInRegions);
                     rectangleTracker.GetObjects(resultObjects, true);
 
-                    Rect[] rects = resultObjects.ToArray();
-
-                    if (enableDownScale)
-                    {
-                        len = rects.Length;
-                        for (int i = 0; i < len; i++)
-                        {
-                            Rect rect = rects[i];
-
-                            // restore to original size rect
-                            rect.x = (int)(rect.x * DOWNSCALE_RATIO);
-                            rect.y = (int)(rect.y * DOWNSCALE_RATIO);
-                            rect.width = (int)(rect.width * DOWNSCALE_RATIO);
-                            rect.height = (int)(rect.height * DOWNSCALE_RATIO);
-                        }
-                    }
-
-                    // draw face rect
-                    DrawRects(rects, rgbaMat.width(), rgbaMat.height());
+                    rects = resultObjects.ToArray();
                 }
+
+                if (enableDownScale)
+                {
+                    int len = rects.Length;
+                    for (int i = 0; i < len; i++)
+                    {
+                        Rect rect = rects[i];
+
+                        // restore to original size rect
+                        rect.x = (int)(rect.x * DOWNSCALE_RATIO);
+                        rect.y = (int)(rect.y * DOWNSCALE_RATIO);
+                        rect.width = (int)(rect.width * DOWNSCALE_RATIO);
+                        rect.height = (int)(rect.height * DOWNSCALE_RATIO);
+                    }
+                }
+
+                // draw face rect.
+                DrawRects(rects, grayMat.width(), grayMat.height());
+
+                DebugUtils.TrackTick();
             }
 
             if (webCamTextureToMatHelper.IsPlaying())
@@ -705,16 +724,48 @@ namespace HoloLensWithOpenCVForUnityExample
             }
         }
 
+        void LateUpdate()
+        {
+            DebugUtils.RenderTick();
+            float renderDeltaTime = DebugUtils.GetRenderDeltaTime();
+            float videoDeltaTime = DebugUtils.GetVideoDeltaTime();
+            float trackDeltaTime = DebugUtils.GetTrackDeltaTime();
+
+            if (renderFPS != null)
+            {
+                renderFPS.text = string.Format("Render: {0:0.0} ms ({1:0.} fps)", renderDeltaTime, 1000.0f / renderDeltaTime);
+            }
+            if (videoFPS != null)
+            {
+                videoFPS.text = string.Format("Video: {0:0.0} ms ({1:0.} fps)", videoDeltaTime, 1000.0f / videoDeltaTime);
+            }
+            if (trackFPS != null)
+            {
+                trackFPS.text = string.Format("Track:   {0:0.0} ms ({1:0.} fps)", trackDeltaTime, 1000.0f / trackDeltaTime);
+            }
+            if (debugStr != null)
+            {
+                if (DebugUtils.GetDebugStrLength() > 0)
+                {
+                    if (debugStr.preferredHeight >= debugStr.rectTransform.rect.height)
+                        debugStr.text = string.Empty;
+
+                    debugStr.text += DebugUtils.GetDebugStr();
+                    DebugUtils.ClearDebugStr();
+                }
+            }
+        }
+
         /// <summary>
         /// Raises the destroy event.
         /// </summary>
         void OnDestroy()
         {
-            imageOptimizationHelper.Dispose();
 #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
             webCamTextureToMatHelper.frameMatAcquired -= OnFrameMatAcquired;
 #endif
             webCamTextureToMatHelper.Dispose();
+            imageOptimizationHelper.Dispose();
 
             if (rectangleTracker != null)
                 rectangleTracker.Dispose();
@@ -761,30 +812,34 @@ namespace HoloLensWithOpenCVForUnityExample
         }
 
         /// <summary>
-        /// Raises the use separate detection toggle value changed event.
-        /// </summary>
-        public void OnUseSeparateDetectionToggleValueChanged()
-        {
-            useSeparateDetection = useSeparateDetectionToggle.isOn;
-
-            lock (rectangleTracker)
-            {
-                if (rectangleTracker != null)
-                    rectangleTracker.Reset();
-            }
-        }
-
-        /// <summary>
         /// Raises the enable downscale toggle value changed event.
         /// </summary>
         public void OnEnableDownScaleToggleValueChanged()
         {
             enableDownScale = enableDownScaleToggle.isOn;
 
-            lock (rectangleTracker)
+            if (rectangleTracker != null)
             {
-                if (rectangleTracker != null)
+                lock (rectangleTracker)
+                {
                     rectangleTracker.Reset();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Raises the use separate detection toggle value changed event.
+        /// </summary>
+        public void OnUseSeparateDetectionToggleValueChanged()
+        {
+            useSeparateDetection = useSeparateDetectionToggle.isOn;
+
+            if (rectangleTracker != null)
+            {
+                lock (rectangleTracker)
+                {
+                    rectangleTracker.Reset();
+                }
             }
         }
     }

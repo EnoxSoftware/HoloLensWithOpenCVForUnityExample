@@ -1,12 +1,9 @@
-﻿/*
- * Hololens Camera Intrinsics Checker Helper
-*/
-
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using UnityEngine.SceneManagement;
 
 #if WINDOWS_UWP
 using System.Threading.Tasks;
@@ -18,14 +15,20 @@ using Windows.Media.MediaProperties;
 using Windows.Media.Devices.Core;
 #endif
 
-namespace HololensCameraIntrinsics
+namespace HoloLensWithOpenCVForUnityExample
 {
+    /// <summary>
+    /// Hololens Camera Intrinsics Checker Helper
+    /// An example for displaying camera resolutions and camera Intrinsics available on the hololens device.
+    /// </summary>
     public class CameraIntrinsicsCheckerHelper : MonoBehaviour
     {
         public Text ResultText;
 
 #if WINDOWS_UWP
         CameraIntrinsicsChecker cameraIntrinsicsChecker;
+
+        readonly static Queue<Action> ExecuteOnMainThread = new Queue<Action>();
 
         // Use this for initialization
         void Start()
@@ -74,13 +77,39 @@ namespace HololensCameraIntrinsics
 
             Debug.Log(result);
 
-            UnityEngine.WSA.Application.InvokeOnAppThread(() =>
+            Enqueue(() =>
             {
                 ResultText.text += result;
-            }, false);
+            });
 
         }
+        private void Update()
+        {
+            lock (ExecuteOnMainThread)
+            {
+                while (ExecuteOnMainThread.Count > 0)
+                {
+                    ExecuteOnMainThread.Dequeue().Invoke();
+                }
+            }
+        }
+
+        private void Enqueue(Action action)
+        {
+            lock (ExecuteOnMainThread)
+            {
+                ExecuteOnMainThread.Enqueue(action);
+            }
+        }
 #endif
+
+        /// <summary>
+        /// Raises the back button click event.
+        /// </summary>
+        public void OnBackButtonClick()
+        {
+            SceneManager.LoadScene("HoloLensWithOpenCVForUnityExample");
+        }
     }
 
 #if WINDOWS_UWP
@@ -98,7 +127,7 @@ namespace HololensCameraIntrinsics
             }
         }
 
-        static readonly MediaStreamType STREAM_TYPE = MediaStreamType.VideoPreview;
+        static readonly MediaStreamType STREAM_TYPE = MediaStreamType.VideoRecord;
 
         MediaFrameSourceGroup _frameSourceGroup;
         MediaFrameSourceInfo _frameSourceInfo;
@@ -115,9 +144,9 @@ namespace HololensCameraIntrinsics
 
         public static async void CreateAync(OnVideoCaptureResourceCreatedCallback onCreatedCallback)
         {
-            var allFrameSourceGroups = await MediaFrameSourceGroup.FindAllAsync();                                              //Returns IReadOnlyList<MediaFrameSourceGroup>
+            var allFrameSourceGroups = await MediaFrameSourceGroup.FindAllAsync();                                       //Returns IReadOnlyList<MediaFrameSourceGroup>
             var candidateFrameSourceGroups = allFrameSourceGroups.Where(group => group.SourceInfos.Any(IsColorVideo));   //Returns IEnumerable<MediaFrameSourceGroup>
-            var selectedFrameSourceGroup = candidateFrameSourceGroups.FirstOrDefault();                                         //Returns a single MediaFrameSourceGroup
+            var selectedFrameSourceGroup = candidateFrameSourceGroups.FirstOrDefault();                                  //Returns a single MediaFrameSourceGroup
 
             if (selectedFrameSourceGroup == null)
             {
