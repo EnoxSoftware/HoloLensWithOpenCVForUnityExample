@@ -22,27 +22,28 @@ namespace OpenCVForUnity.RectangleTrack
         public int id;
         public TrackedState state;
 
-        public Rect position {
-            get { return lastPositions [lastPositions.Count - 1].clone (); }
+        public Rect position
+        {
+            get { return lastPositions[lastPositions.Count - 1].clone(); }
         }
 
         static private int _id = 0;
 
-        public TrackedObject (Rect rect)
+        public TrackedObject(Rect rect)
         {
-            lastPositions = new PositionsVector ();
-            
+            lastPositions = new PositionsVector();
+
             numDetectedFrames = 1;
             numFramesNotDetected = 0;
             state = TrackedState.NEW;
 
-            lastPositions.Add (rect.clone ());
+            lastPositions.Add(rect.clone());
 
-            _id = GetNextId ();
+            _id = GetNextId();
             id = _id;
         }
 
-        static int GetNextId ()
+        static int GetNextId()
         {
             _id++;
             return _id;

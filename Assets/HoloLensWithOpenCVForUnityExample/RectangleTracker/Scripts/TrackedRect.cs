@@ -9,8 +9,8 @@ namespace OpenCVForUnity.RectangleTrack
         public int id;
         public TrackedState state;
 
-        public TrackedRect (int id, Rect rect, TrackedState state, int numDetectedFrames, int numFramesNotDetected)
-            : base (rect.x, rect.y, rect.width, rect.height)
+        public TrackedRect(int id, Rect rect, TrackedState state, int numDetectedFrames, int numFramesNotDetected)
+            : base(rect.x, rect.y, rect.width, rect.height)
         {
             this.numDetectedFrames = numDetectedFrames;
             this.numFramesNotDetected = numFramesNotDetected;

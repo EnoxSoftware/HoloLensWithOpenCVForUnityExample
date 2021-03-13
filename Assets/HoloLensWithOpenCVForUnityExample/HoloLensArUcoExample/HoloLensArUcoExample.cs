@@ -453,7 +453,7 @@ namespace HoloLensWithOpenCVForUnityExample
             Debug.Log("invertZM " + invertZM.ToString());
 
             detectorParams = DetectorParameters.create();
-            dictionary = Aruco.getPredefinedDictionary(Aruco.DICT_6X6_250);
+            dictionary = Aruco.getPredefinedDictionary(dictionaryId);
 
 
             //If WebCamera is frontFaceing, flip Mat.

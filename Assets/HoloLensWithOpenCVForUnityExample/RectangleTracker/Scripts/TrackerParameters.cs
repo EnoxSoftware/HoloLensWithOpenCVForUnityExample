@@ -12,13 +12,13 @@
         public float coeffObjectSpeedUsingInPrediction = 0.8f;
         public float coeffRectangleOverlap = 0.7f;
 
-        public TrackerParameters ()
+        public TrackerParameters()
         {
         }
 
-        public TrackerParameters Clone ()
+        public TrackerParameters Clone()
         {
-            TrackerParameters trackerParameters = new TrackerParameters ();
+            TrackerParameters trackerParameters = new TrackerParameters();
             trackerParameters.numLastPositionsToTrack = numLastPositionsToTrack;
             trackerParameters.numStepsToWaitBeforeFirstShow = numStepsToWaitBeforeFirstShow;
             trackerParameters.numStepsToTrackWithoutDetectingIfObjectHasNotBeenShown = numStepsToTrackWithoutDetectingIfObjectHasNotBeenShown;
