@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -51,6 +51,18 @@ namespace HoloLensWithOpenCVForUnityExample
             versionInfo.text += ".NET";
 #endif
 
+            versionInfo.text += " / ";
+
+#if XR_PLUGIN_WINDOWSMR
+            versionInfo.text += "XR_PLUGIN_WINDOWSMR";
+#elif XR_PLUGIN_OPENXR
+            versionInfo.text += "XR_PLUGIN_OPENXR";
+#elif BUILTIN_XR
+            versionInfo.text += "BUILTIN_XR";
+#else
+            versionInfo.text += "XR system unknown";
+#endif
+
             scrollRect.verticalNormalizedPosition = verticalNormalizedPosition;
         }
 
@@ -71,38 +83,33 @@ namespace HoloLensWithOpenCVForUnityExample
             SceneManager.LoadScene("ShowLicense");
         }
 
-        public void OnHoloLensPhotoCaptureExampleButtonClick()
+        public void OnHLPhotoCaptureExampleButtonClick()
         {
-            SceneManager.LoadScene("HoloLensPhotoCaptureExample");
+            SceneManager.LoadScene("HLPhotoCaptureExample");
         }
 
-        public void OnHoloLensComicFilterExampleButtonClick()
+        public void OnHLCameraStreamToMatHelperExampleButtonClick()
         {
-            SceneManager.LoadScene("HoloLensComicFilterExample");
+            SceneManager.LoadScene("HLCameraStreamToMatHelperExample");
         }
 
-        public void OnHoloLensFaceDetectionExampleButtonClick()
+        public void OnHLFaceDetectionExampleButtonClick()
         {
-            SceneManager.LoadScene("HoloLensFaceDetectionExample");
+            SceneManager.LoadScene("HLFaceDetectionExample");
         }
 
-        public void OnHoloLensFaceDetectionOverlayExampleButtonClick()
+        public void OnHLArUcoExampleButtonClick()
         {
-            SceneManager.LoadScene("HoloLensFaceDetectionOverlayExample");
+            SceneManager.LoadScene("HLArUcoExample");
         }
 
-        public void OnHoloLensArUcoExampleButtonClick()
+        public void OnHLArUcoCameraCalibrationExampleButtonClick()
         {
-            SceneManager.LoadScene("HoloLensArUcoExample");
+            SceneManager.LoadScene("HLArUcoCameraCalibrationExample");
         }
-
-        public void OnHoloLensArUcoCameraCalibrationExampleButtonClick()
+        public void OnHLCameraIntrinsicsCheckerButtonClick()
         {
-            SceneManager.LoadScene("HoloLensArUcoCameraCalibrationExample");
-        }
-        public void OnHoloLensCameraIntrinsicsCheckerButtonClick()
-        {
-            SceneManager.LoadScene("HoloLensCameraIntrinsicsChecker");
+            SceneManager.LoadScene("HLCameraIntrinsicsChecker");
         }
     }
 }

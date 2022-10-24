@@ -1,4 +1,4 @@
-﻿using OpenCVForUnity.UnityUtils;
+using OpenCVForUnity.UnityUtils;
 using System.Collections.Generic;
 using UnityEngine;
 

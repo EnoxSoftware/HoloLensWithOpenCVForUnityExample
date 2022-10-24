@@ -2,55 +2,53 @@
 
 
 ## What's new
-* Changed the HoloLensCameraStream plugin to the camnewnham's repository. (Improve camera update FPS, hide recording icon, extract camera intrinsic)
+* Support for Hololens1 and Hololens2. (XR System: Legacy Built-in XR / XR Plugin Management WindowsMR / XR Plugin Management OpenXR)
 
 
 ## Demo Video (old version)
 [![](http://img.youtube.com/vi/SdzsedkTpCI/0.jpg)](https://youtu.be/SdzsedkTpCI)
 
 
-## Demo Hololens App
-* [HoloLensWithOpenCVForUnityExample.zip](https://github.com/EnoxSoftware/HoloLensWithOpenCVForUnityExample/releases)
-* Use the Windows Device Portal to install apps on HoloLens. [https://docs.microsoft.com/en-us/hololens/hololens-install-apps](https://docs.microsoft.com/en-us/hololens/hololens-install-apps)
-
-
 ## Environment
-* Hololens 10.0.17763.914 (RS5)
-* Windows 10 SDK 10.0.18362.0
-* Visual Studio 2017 or 2019
-* Unity 2018.4.28f1+  
-* [Microsoft Mixed Reality Toolkit](https://github.com/Microsoft/MixedRealityToolkit-Unity/releases) v2.2.0 
-* [OpenCV for Unity](https://assetstore.unity.com/packages/tools/integration/opencv-for-unity-21088?aid=1011l4ehR) 2.4.1+ 
-* [camnewnham/HoloLensCameraStream](https://github.com/camnewnham/HoloLensCameraStream) 
+* Hololens1 10.0.17763.3532 / Hololens2 20348.1522
+* Windows 10 SDK 10.0.19041.0
+* Visual Studio 2019
+* Unity 2019.4.31f1 / 2020.3.38f1
+* [Microsoft Mixed Reality Toolkit](https://github.com/Microsoft/MixedRealityToolkit-Unity/releases) v2.8.2 
+* [OpenCV for Unity](https://assetstore.unity.com/packages/tools/integration/opencv-for-unity-21088?aid=1011l4ehR) 2.4.9+ 
+* [EnoxSoftware/HoloLensCameraStream](https://github.com/EnoxSoftware/HoloLensCameraStream)
 
 
 ## Setup
 1. Download the latest release unitypackage. [HoloLensWithOpenCVForUnityExample.unitypackage](https://github.com/EnoxSoftware/HoloLensWithOpenCVForUnityExample/releases)
-1. Create a new project. (HoloLensWithOpenCVForUnityExample)
-    * Change the platform to UWP in the "Build Settings" window.
+1. Create a new project. (`HoloLensWithOpenCVForUnityExample`)
+    * Change the platform to `UWP` in the "Build Settings" window.
 1. Import the OpenCVForUnity.
     * Setup the OpenCVForUnity. (Tools > OpenCV for Unity > Set Plugin Import Settings)
-    * Move the "OpenCVForUnity/StreamingAssets/haarcascade_frontalface_alt.xml" and "OpenCVForUnity/StreamingAssets/lbpcascade_frontalface.xml" to the "Assets/StreamingAssets/" folder.
+    * Move the "OpenCVForUnity/StreamingAssets/objdetect/haarcascade_frontalface_alt.xml" and "OpenCVForUnity/StreamingAssets/objdetect/lbpcascade_frontalface.xml" to the "Assets/StreamingAssets/objdetect/" folder.
 1. Clone HoloLensCameraStream repository.
     * Copy the "HoloLensCameraStream/HoloLensVideoCaptureExample/Assets/CamStream/" folder to the "Assets/" folder.
-    * Set the scripting backend of the plugin inspector to "Any Script Backend". (IL2CPP support)
-1. Import the Microsoft.MixedReality.Toolkit.Unity.Foundation.2.2.0.unitypackage.
-    * Setup the MRTKv2. (Mixed Reality ToolKit > Utilities > Configure Unity Project)
-    * Do not enable the "Enable MSBuild for Unity" option in the "MRTK Project Configurator > Modify Configurations" tab.
+1. Import the Microsoft Mixed Reality Toolkit. (Recommend using [MixedRealityFeatureTool](https://www.microsoft.com/en-us/download/details.aspx?id=102778))
+    * Follow the MRTK2 configuration dialog to set up the project.
 1. Import the HoloLensWithOpenCVForUnityExample.unitypackage.
 1. Add the "Assets/HoloLensWithOpenCVForUnityExample/*.unity" files to the "Scenes In Build" list in the "Build Settings" window.
-1. Setup a performance environment suitable for Holorens. (See [https://docs.microsoft.com/en-us/windows/mixed-reality/develop/unity/recommended-settings-for-unity](https://docs.microsoft.com/en-us/windows/mixed-reality/develop/unity/recommended-settings-for-unity))
-    * Enable "WebCam" Capabilties in Publishing settings tab.
-1. Build and Deploy to HoloLens. (See [https://developer.microsoft.com/en-us/windows/holographic/holograms_100](https://developer.microsoft.com/en-us/windows/holographic/holograms_100))
+1. Configure settings in the "Project Settings" window.
+    * Add Define Symbols: the following to `Scripting Define Symbols` depending on the XR system used in your project; Legacy built-in XR: `BUILTIN_XR`; XR Plugin Management (Windows Mixed Reality): `XR_PLUGIN_WINDOWSMR`; XR Plugin Management (OpenXR):`XR_PLUGIN_OPENXR`.
+    * Enable `WebCam` Capabilties in Publishing settings tab.
+1. (Optional) Setup a performance environment suitable for Holorens. (See [https://docs.microsoft.com/en-us/windows/mixed-reality/develop/unity/recommended-settings-for-unity](https://docs.microsoft.com/en-us/windows/mixed-reality/develop/unity/recommended-settings-for-unity))
+1. **Build the project:** You can now build the Unity project, which generates a Visual Studio Solution (which you will then have to also build). With the Build Settings window still open, click **Build**. In the explorer window that appears, make a new folder called `App`, which should live as a sibling next to the 'Assets` folder. Then click Select Folder to generate the VS solution in that folder. Then wait for Unity to build the solution.
+1. **Open the VS Solution:** When the solution is built, a Windows explorer folder will open. Open the newly-built VS solution, which lives in `App/HoloLensWithOpenCVForUnityExample.sln`. This is the solution that ultimately gets deployed to your HoloLens.
+1. **Configure the deploy settings:** In the Visual Studio toolbar, change the solution platform from `ARM` to `x86` if you are building for Hololens1 or to `ARM64` if you are building for Hololens2; Change the deploy target (the green play button) to `Device` (if your HoloLens is plugged into your computer), or `Remote Machine` (if your HoloLens is connected via WiFi).
+1. **Run the app:** Go to **Debug > Start Debugging**. Once the app is deployed to the HoloLens, you should see some confirmation output in the Output window.
     *  (Print the AR marker "CanonicalMarker-d10-i1-sp500-bb1.pdf" and "ChArUcoBoard-mx5-my7-d10-os1000-bb1.pdf" on an A4 size paper)  
 
-|Project Assets|MRTK Project Configurator|
+|Project Assets|Build Settings|
 |---|---|
-|![ProjectAssets.jpg](ProjectAssets.jpg)|![MRTKProjectConfigurator.jpg](MRTKProjectConfigurator.jpg)|
+|![ProjectAssets.jpg](ProjectAssets.jpg)|![BuildSettings.jpg](BuildSettings.jpg)|
 
-|Build Settings|Player Settings|
-|---|---|
-|![BuildSettings.jpg](BuildSettings.jpg)|![PlayerSettings.jpg](PlayerSettings.jpg)|
+|Player Settings|
+|---|
+|![PlayerSettings.jpg](PlayerSettings.jpg)|
 
 
 ## ScreenShot (old version)

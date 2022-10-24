@@ -1,4 +1,4 @@
-﻿namespace OpenCVForUnity.RectangleTrack
+namespace OpenCVForUnity.RectangleTrack
 {
     public class TrackerParameters
     {

@@ -1,4 +1,4 @@
-﻿using OpenCVForUnity.CoreModule;
+using OpenCVForUnity.CoreModule;
 using PositionsVector = System.Collections.Generic.List<OpenCVForUnity.CoreModule.Rect>;
 
 namespace OpenCVForUnity.RectangleTrack
