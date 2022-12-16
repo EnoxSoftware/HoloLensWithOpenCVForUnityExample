@@ -250,24 +250,24 @@ namespace HoloLensWithOpenCVForUnityExample
 
 
             cascade = new CascadeClassifier();
-            cascade.load(Utils.getFilePath("objdetect/lbpcascade_frontalface.xml"));
+            cascade.load(Utils.getFilePath("OpenCVForUnity/objdetect/lbpcascade_frontalface.xml"));
 #if !WINDOWS_UWP || UNITY_EDITOR
             // "empty" method is not working on the UWP platform.
             if (cascade.empty())
             {
-                Debug.LogError("cascade file is not loaded. Please copy from “OpenCVForUnity/StreamingAssets/objdetect/” to “Assets/StreamingAssets/objdetect/” folder. ");
+                Debug.LogError("cascade file is not loaded. Please copy from “OpenCVForUnity/StreamingAssets/OpenCVForUnity/objdetect/” to “Assets/StreamingAssets/OpenCVForUnity/objdetect/” folder. ");
             }
 #endif
 
             grayMat4Thread = new Mat();
             cascade4Thread = new CascadeClassifier();
-            //cascade4Thread.load(Utils.getFilePath("objdetect/haarcascade_frontalface_alt.xml"));
-            cascade4Thread.load(Utils.getFilePath("objdetect/lbpcascade_frontalface.xml"));
+            //cascade4Thread.load(Utils.getFilePath("OpenCVForUnity/objdetect/haarcascade_frontalface_alt.xml"));
+            cascade4Thread.load(Utils.getFilePath("OpenCVForUnity/objdetect/lbpcascade_frontalface.xml"));
 #if !WINDOWS_UWP || UNITY_EDITOR
             // "empty" method is not working on the UWP platform.
             if (cascade4Thread.empty())
             {
-                Debug.LogError("cascade file is not loaded. Please copy from “OpenCVForUnity/StreamingAssets/objdetect/” to “Assets/StreamingAssets/objdetect/” folder. ");
+                Debug.LogError("cascade file is not loaded. Please copy from “OpenCVForUnity/StreamingAssets/OpenCVForUnity/objdetect/” to “Assets/StreamingAssets/OpenCVForUnity/objdetect/” folder. ");
             }
 #endif
         }
@@ -834,7 +834,7 @@ namespace HoloLensWithOpenCVForUnityExample
         /// </summary>
         public void OnChangeCameraButtonClick()
         {
-            webCamTextureToMatHelper.requestedIsFrontFacing = !webCamTextureToMatHelper.IsFrontFacing();
+            webCamTextureToMatHelper.requestedIsFrontFacing = !webCamTextureToMatHelper.requestedIsFrontFacing;
         }
 
         /// <summary>

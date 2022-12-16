@@ -15,7 +15,7 @@
 * Visual Studio 2019
 * Unity 2019.4.31f1 / 2020.3.38f1
 * [Microsoft Mixed Reality Toolkit](https://github.com/Microsoft/MixedRealityToolkit-Unity/releases) v2.8.2 
-* [OpenCV for Unity](https://assetstore.unity.com/packages/tools/integration/opencv-for-unity-21088?aid=1011l4ehR) 2.4.9+ 
+* [OpenCV for Unity](https://assetstore.unity.com/packages/tools/integration/opencv-for-unity-21088?aid=1011l4ehR) 2.5.0+ 
 * [EnoxSoftware/HoloLensCameraStream](https://github.com/EnoxSoftware/HoloLensCameraStream)
 
 
@@ -24,8 +24,9 @@
 1. Create a new project. (`HoloLensWithOpenCVForUnityExample`)
     * Change the platform to `UWP` in the "Build Settings" window.
 1. Import the OpenCVForUnity.
-    * Setup the OpenCVForUnity. (Tools > OpenCV for Unity > Set Plugin Import Settings)
-    * Move the "OpenCVForUnity/StreamingAssets/objdetect/haarcascade_frontalface_alt.xml" and "OpenCVForUnity/StreamingAssets/objdetect/lbpcascade_frontalface.xml" to the "Assets/StreamingAssets/objdetect/" folder.
+    * Select MenuItem[Tools/OpenCV for Unity/Open Setup Tools].
+    * Click the [Move StreamingAssets Folder] button.
+    * Leave the following files and delete the rest. ("StreamingAssets/OpenCVForUnity/objdetect/haarcascade_frontalface_alt.xml", "lbpcascade_ frontalface.xml")
 1. Clone HoloLensCameraStream repository.
     * Copy the "HoloLensCameraStream/HoloLensVideoCaptureExample/Assets/CamStream/" folder to the "Assets/" folder.
 1. Import the Microsoft Mixed Reality Toolkit. (Recommend using [MixedRealityFeatureTool](https://www.microsoft.com/en-us/download/details.aspx?id=102778))
