@@ -4,11 +4,8 @@
 #if !OPENCV_DONT_USE_WEBCAMTEXTURE_API
 #if !(PLATFORM_LUMIN && !UNITY_EDITOR)
 
-#if !DISABLE_HOLOLENSCAMSTREAM_API
 using HoloLensCameraStream;
 using OpenCVForUnity.UnityUtils;
-#endif
-
 using OpenCVForUnity.CoreModule;
 using OpenCVForUnity.UnityUtils.Helper;
 using OpenCVForUnity.UtilsModule;
@@ -36,7 +33,7 @@ namespace HoloLensWithOpenCVForUnity.UnityUtils.Helper
 
     /// <summary>
     /// Hololens camera stream to mat helper.
-    /// v 1.0.6
+    /// v 1.0.7
     /// Depends on EnoxSoftware/HoloLensCameraStream (https://github.com/EnoxSoftware/HoloLensCameraStream).
     /// Depends on OpenCVForUnity version 2.4.1 (WebCamTextureToMatHelper v 1.1.2) or later.
     /// 
