@@ -39,18 +39,18 @@
 1. **Run the app:** Go to **Debug > Start Debugging**. Once the app is deployed to the HoloLens, you should see some confirmation output in the Output window.
     *  (Print the AR marker "CanonicalMarker-d10-i1-sp500-bb1.pdf" on an A4 size paper)  
 
-1. [Choosing a Unity version and XR plugin](https://learn.microsoft.com/en-us/windows/mixed-reality/develop/unity/choosing-unity-version)
-1. [Known issues in Unity versions and packages](https://learn.microsoft.com/en-us/windows/mixed-reality/develop/unity/known-issues)
+* [Choosing a Unity version and XR plugin](https://learn.microsoft.com/en-us/windows/mixed-reality/develop/unity/choosing-unity-version)
+* [Known issues in Unity versions and packages](https://learn.microsoft.com/en-us/windows/mixed-reality/develop/unity/known-issues)
 
 
 ## Setup (HoloLens1 / Unity 2019 (Built-in Render Pipeline / LegacyXR / MRTK 2 / DirectX 11 / Visual Studio 2019))
 1. Download the latest release unitypackage.
 1. Create a new project. (`HoloLensWithOpenCVForUnityExample`)
-1. Import the OpenCVForUnity.
-1. Import the HoloLensCameraStream.
 1. Import the Microsoft Mixed Reality Toolkit.
     * Add MRTK2 (Mixed Reality Toolkit - Mixed Reality Toolkit Foundation) to the project using "Mixed Reality Feature Tool".
     * Follow the MRTK2 configuration dialog to set up the project. (XR System: Legacy Built-in XR)
+1. Import the OpenCVForUnity.
+1. Import the HoloLensCameraStream.
 1. Import the HoloLensWithOpenCVForUnityExampleMRTK2.unitypackage.
 1. Add the "Assets/HoloLensWithOpenCVForUnityExample/*.unity" files to the "Scenes In Build" list in the "Build Settings" window.
 1. Configure settings in the "Project Settings" window.
@@ -62,11 +62,11 @@
 ## Setup (Unity 2021 (Built-in Render Pipeline / OpenXR / MRTK 2 / DirectX 11 / Visual Studio 2022))
 1. Download the latest release unitypackage.
 1. Create a new project. (`HoloLensWithOpenCVForUnityExample`)
-1. Import the OpenCVForUnity.
-1. Import the HoloLensCameraStream.
 1. Import the Microsoft Mixed Reality Toolkit.
     * Add MRTK2 (Mixed Reality Toolkit - Mixed Reality Toolkit Foundation) and OpenXR(Platform Support - Mixed Reality OpenXR Plugin) to the project using "Mixed Reality Feature Tool".
     * Follow the MRTK2 configuration dialog to set up the project. (XR System: OpenXR)
+1. Import the OpenCVForUnity.
+1. Import the HoloLensCameraStream.
 1. Import the HoloLensWithOpenCVForUnityExampleMRTK2.unitypackage.
 1. Add the "Assets/HoloLensWithOpenCVForUnityExample/*.unity" files to the "Scenes In Build" list in the "Build Settings" window.
 1. Configure settings in the "Project Settings" window.
@@ -74,17 +74,17 @@
     * Enable `WebCam` Capabilties in Publishing settings tab.
 1. Build the project; open it in VS2022, set the deployment target to `ARM64` and deploy it to the Hololens2 actual device.
 
-1. [Set up a new OpenXR project with MRTK](https://learn.microsoft.com/en-us/windows/mixed-reality/develop/unity/new-openxr-project-with-mrtk)
+* [Set up a new OpenXR project with MRTK](https://learn.microsoft.com/en-us/windows/mixed-reality/develop/unity/new-openxr-project-with-mrtk)
 
 
 ## Setup (Unity 2021 (Built-in Render Pipeline / OpenXR / MRTK 3 / DirectX 11 / Visual Studio 2022))
 1. Download the latest release unitypackage.
 1. Create a new project. (`HoloLensWithOpenCVForUnityExample`)
-1. Import the OpenCVForUnity.
-1. Import the HoloLensCameraStream.
 1. Import the Microsoft Mixed Reality Toolkit.
     * Add MRTK3 (MRTK3 - MRTK Input, MRTK UX Components, MRTK UX Components (Non-Canvas)) and OpenXR(Platform Support - Mixed Reality OpenXR Plugin) to the project using "Mixed Reality Feature Tool".
     * * Set up the MRTK3. (XR System: OpenXR)
+1. Import the OpenCVForUnity.
+1. Import the HoloLensCameraStream.
 1. Import the HoloLensWithOpenCVForUnityExampleMRTK3.unitypackage.
 1. Add the "Assets/HoloLensWithOpenCVForUnityExample/*.unity" files to the "Scenes In Build" list in the "Build Settings" window.
 1. Configure settings in the "Project Settings" window.
@@ -92,7 +92,7 @@
     * Enable `WebCam` Capabilties in Publishing settings tab.
 1. Build the project; open it in VS2022, set the deployment target to `ARM64` and deploy it to the Hololens2 actual device.
 
-1. [Setting up a new Unity project with MRTK3](https://learn.microsoft.com/en-us/windows/mixed-reality/mrtk-unity/mrtk3-overview/getting-started/setting-up/setup-new-project)
+* [Setting up a new Unity project with MRTK3](https://learn.microsoft.com/en-us/windows/mixed-reality/mrtk-unity/mrtk3-overview/getting-started/setting-up/setup-new-project)
 
 
 
