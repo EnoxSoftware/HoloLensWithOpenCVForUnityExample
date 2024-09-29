@@ -72,7 +72,7 @@
 1. Configure settings in the "Project Settings" window.
     * Add `XR_PLUGIN_OPENXR` to the list of Define Symbols.
     * Enable `WebCam` Capabilties in Publishing settings tab.
-1. Build the project; open it in VS222, set the deployment target to `ARM64` and deploy it to the Hololens2 actual device.
+1. Build the project; open it in VS2022, set the deployment target to `ARM64` and deploy it to the Hololens2 actual device.
 
 1. [Set up a new OpenXR project with MRTK](https://learn.microsoft.com/en-us/windows/mixed-reality/develop/unity/new-openxr-project-with-mrtk)
 
