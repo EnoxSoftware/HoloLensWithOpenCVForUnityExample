@@ -499,13 +499,13 @@ namespace HoloLensWithOpenCVForUnity.UnityUtils.Helper
                     Core.rotate(mat, rotatedFrameMat, Core.ROTATE_90_CLOCKWISE);
                     mat.Dispose();
 
-                    FlipMat(rotatedFrameMat, _flipVertical, _flipHorizontal);
+                    FlipMat(rotatedFrameMat, _flipVertical, _flipHorizontal, false, 0);
 
                     frameMatAcquired.Invoke(rotatedFrameMat, projectionMatrix, cameraToWorldMatrix, cameraIntrinsics);
                 }
                 else
                 {
-                    FlipMat(mat, _flipVertical, _flipHorizontal);
+                    FlipMat(mat, _flipVertical, _flipHorizontal, false, 0);
 
                     frameMatAcquired.Invoke(mat, projectionMatrix, cameraToWorldMatrix, cameraIntrinsics);
                 }
@@ -1030,23 +1030,27 @@ namespace HoloLensWithOpenCVForUnity.UnityUtils.Helper
             if (rotatedFrameMat != null)
             {
                 Core.rotate(frameMat, rotatedFrameMat, Core.ROTATE_90_CLOCKWISE);
-                FlipMat(rotatedFrameMat, _flipVertical, _flipHorizontal);
+                FlipMat(rotatedFrameMat, _flipVertical, _flipHorizontal, false, 0);
 
                 return rotatedFrameMat;
             }
             else
             {
-                FlipMat(frameMat, _flipVertical, _flipHorizontal);
+                FlipMat(frameMat, _flipVertical, _flipHorizontal, false, 0);
 
                 return frameMat;
             }
         }
 
         /// <summary>
-        /// Flip the mat.
+        /// Flip Mat
         /// </summary>
-        /// <param name="mat">Mat.</param>
-        protected override void FlipMat(Mat mat, bool flipVertical, bool flipHorizontal)
+        /// <param name="mat"></param>
+        /// <param name="flipVertical"></param>
+        /// <param name="flipHorizontal"></param>
+        /// <param name="isFrontFacing"></param>
+        /// <param name="videoRotationAngle"></param>
+        protected override void FlipMat(Mat mat, bool flipVertical, bool flipHorizontal, bool isFrontFacing, int videoRotationAngle)
         {
             int flipCode = int.MinValue;
 
