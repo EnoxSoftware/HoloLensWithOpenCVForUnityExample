@@ -3488,7 +3488,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1709852085}
-  - component: {fileID: 1709852084}
+  - component: {fileID: 1709852087}
   - component: {fileID: 1709852083}
   - component: {fileID: 1709852086}
   m_Layer: 0
@@ -3520,11 +3520,12 @@ MonoBehaviour:
   _flipHorizontal: 0
   _outputColorFormat: 0
   _timeoutFrameCount: 300
-  onInitialized:
+  _onInitialized:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1709852086}
-        m_TargetAssemblyTypeName: 
+        m_TargetAssemblyTypeName: HoloLensWithOpenCVForUnityExample.HLArUcoExample,
+          Assembly-CSharp
         m_MethodName: OnWebCamTextureToMatHelperInitialized
         m_Mode: 1
         m_Arguments:
@@ -3535,11 +3536,12 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  onDisposed:
+  _onDisposed:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1709852086}
-        m_TargetAssemblyTypeName: 
+        m_TargetAssemblyTypeName: HoloLensWithOpenCVForUnityExample.HLArUcoExample,
+          Assembly-CSharp
         m_MethodName: OnWebCamTextureToMatHelperDisposed
         m_Mode: 1
         m_Arguments:
@@ -3550,11 +3552,12 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  onErrorOccurred:
+  _onErrorOccurred:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1709852086}
-        m_TargetAssemblyTypeName: 
+        m_TargetAssemblyTypeName: HoloLensWithOpenCVForUnityExample.HLArUcoExample,
+          Assembly-CSharp
         m_MethodName: OnWebCamTextureToMatHelperErrorOccurred
         m_Mode: 0
         m_Arguments:
@@ -3565,21 +3568,6 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  avoidAndroidFrontCameraLowLightIssue: 0
---- !u!114 &1709852084
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1709852081}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d8d27c020f1865746b5abf91a35964df, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _downscaleRatio: 2
-  _frameSkippingRatio: 1
 --- !u!4 &1709852085
 Transform:
   m_ObjectHideFlags: 0
@@ -3627,6 +3615,20 @@ MonoBehaviour:
   videoFPS: {fileID: 483362305815949845}
   trackFPS: {fileID: 1543301699}
   debugStr: {fileID: 483484711471432421}
+--- !u!114 &1709852087
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1709852081}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f065446083c6ae5449076b65cf4452ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _downscaleRatio: 2
+  _frameSkippingRatio: 1
 --- !u!1 &1802466379
 GameObject:
   m_ObjectHideFlags: 0

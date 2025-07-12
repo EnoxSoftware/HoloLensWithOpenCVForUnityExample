@@ -1,11 +1,12 @@
 using HoloLensCameraStream;
-using HoloLensWithOpenCVForUnity.UnityUtils.Helper;
+using HoloLensWithOpenCVForUnity.UnityIntegration.Helper.Source2Mat;
 using HoloLensWithOpenCVForUnityExample.RectangleTrack;
 using OpenCVForUnity.CoreModule;
 using OpenCVForUnity.ImgprocModule;
 using OpenCVForUnity.ObjdetectModule;
-using OpenCVForUnity.UnityUtils;
-using OpenCVForUnity.UnityUtils.Helper;
+using OpenCVForUnity.UnityIntegration;
+using OpenCVForUnity.UnityIntegration.Helper.Optimization;
+using OpenCVForUnity.UnityIntegration.Helper.Source2Mat;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -195,7 +196,7 @@ namespace HoloLensWithOpenCVForUnityExample
             imageOptimizationHelper = gameObject.GetComponent<ImageOptimizationHelper>();
             webCamTextureToMatHelper = gameObject.GetComponent<HLCameraStream2MatHelper>();
 #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
-            webCamTextureToMatHelper.frameMatAcquired += OnFrameMatAcquired;
+            webCamTextureToMatHelper.FrameMatAcquired += OnFrameMatAcquired;
 #endif
 
             rectangleTracker = new RectangleTracker();
@@ -206,9 +207,9 @@ namespace HoloLensWithOpenCVForUnityExample
                 debugStr.text = "Preparing file access...";
             }
 
-            cascade_filepath = await Utils.getFilePathAsyncTask("OpenCVForUnity/objdetect/lbpcascade_frontalface.xml", cancellationToken: cts.Token);
-            //cascade4Thread_filepath = await Utils.getFilePathAsyncTask("OpenCVForUnity/objdetect/haarcascade_frontalface_alt.xml", cancellationToken: cts.Token);
-            cascade4Thread_filepath = await Utils.getFilePathAsyncTask("OpenCVForUnity/objdetect/lbpcascade_frontalface.xml", cancellationToken: cts.Token);
+            cascade_filepath = await OpenCVEnv.GetFilePathTaskAsync("OpenCVForUnityExample/objdetect/lbpcascade_frontalface.xml", cancellationToken: cts.Token);
+            //cascade4Thread_filepath = await OpenCVEnv.GetFilePathTaskAsync("OpenCVForUnityExample/objdetect/haarcascade_frontalface_alt.xml", cancellationToken: cts.Token);
+            cascade4Thread_filepath = await OpenCVEnv.GetFilePathTaskAsync("OpenCVForUnityExample/objdetect/lbpcascade_frontalface.xml", cancellationToken: cts.Token);
 
             if (debugStr != null)
             {
@@ -227,7 +228,7 @@ namespace HoloLensWithOpenCVForUnityExample
             // "empty" method is not working on the UWP platform.
             if (cascade.empty())
             {
-                Debug.LogError("cascade file is not loaded. Please copy from “OpenCVForUnity/StreamingAssets/OpenCVForUnity/objdetect/” to “Assets/StreamingAssets/OpenCVForUnity/objdetect/” folder. ");
+                Debug.LogError("cascade file is not loaded. Please copy from “OpenCVForUnity/StreamingAssets/OpenCVForUnityExample/objdetect/” to “Assets/StreamingAssets/OpenCVForUnityExample/objdetect/” folder. ");
             }
 #endif
 
@@ -237,11 +238,11 @@ namespace HoloLensWithOpenCVForUnityExample
             // "empty" method is not working on the UWP platform.
             if (cascade4Thread.empty())
             {
-                Debug.LogError("cascade file is not loaded. Please copy from “OpenCVForUnity/StreamingAssets/OpenCVForUnity/objdetect/” to “Assets/StreamingAssets/OpenCVForUnity/objdetect/” folder. ");
+                Debug.LogError("cascade file is not loaded. Please copy from “OpenCVForUnity/StreamingAssets/OpenCVForUnityExample/objdetect/” to “Assets/StreamingAssets/OpenCVForUnityExample/objdetect/” folder. ");
             }
 #endif
 
-            webCamTextureToMatHelper.outputColorFormat = Source2MatHelperColorFormat.GRAY;
+            webCamTextureToMatHelper.OutputColorFormat = Source2MatHelperColorFormat.GRAY;
             webCamTextureToMatHelper.Initialize();
         }
 
@@ -264,9 +265,9 @@ namespace HoloLensWithOpenCVForUnityExample
             //Debug.Log("Screen.width " + Screen.width + " Screen.height " + Screen.height + " Screen.orientation " + Screen.orientation);
 
 
-            DebugUtils.AddDebugStr(webCamTextureToMatHelper.outputColorFormat.ToString() + " " + webCamTextureToMatHelper.GetWidth() + " x " + webCamTextureToMatHelper.GetHeight() + " : " + webCamTextureToMatHelper.GetFPS());
+            DebugUtils.AddDebugStr(webCamTextureToMatHelper.OutputColorFormat.ToString() + " " + webCamTextureToMatHelper.GetWidth() + " x " + webCamTextureToMatHelper.GetHeight() + " : " + webCamTextureToMatHelper.GetFPS());
             if (enableDownScale)
-                DebugUtils.AddDebugStr("enableDownScale = true: " + imageOptimizationHelper.downscaleRatio + " / " + webCamTextureToMatHelper.GetWidth() / imageOptimizationHelper.downscaleRatio + " x " + webCamTextureToMatHelper.GetHeight() / imageOptimizationHelper.downscaleRatio);
+                DebugUtils.AddDebugStr("enableDownScale = true: " + imageOptimizationHelper.DownscaleRatio + " / " + webCamTextureToMatHelper.GetWidth() / imageOptimizationHelper.DownscaleRatio + " x " + webCamTextureToMatHelper.GetHeight() / imageOptimizationHelper.DownscaleRatio);
 
 
             Matrix4x4 projectionMatrix;
@@ -358,7 +359,7 @@ namespace HoloLensWithOpenCVForUnityExample
             if (enableDownScale)
             {
                 downScaleMat = imageOptimizationHelper.GetDownScaleMat(grayMat);
-                DOWNSCALE_RATIO = imageOptimizationHelper.downscaleRatio;
+                DOWNSCALE_RATIO = imageOptimizationHelper.DownscaleRatio;
             }
             else
             {
@@ -484,7 +485,7 @@ namespace HoloLensWithOpenCVForUnityExample
             {
                 if (!webCamTextureToMatHelper.IsPlaying()) return;
 
-                Utils.matToTexture2D(grayMat, texture);
+                OpenCVMatUtils.MatToTexture2D(grayMat, texture);
                 grayMat.Dispose();
 
                 Matrix4x4 worldToCameraMatrix = cameraToWorldMatrix.inverse;
@@ -551,7 +552,7 @@ namespace HoloLensWithOpenCVForUnityExample
                 if (enableDownScale)
                 {
                     downScaleMat = imageOptimizationHelper.GetDownScaleMat(grayMat);
-                    DOWNSCALE_RATIO = imageOptimizationHelper.downscaleRatio;
+                    DOWNSCALE_RATIO = imageOptimizationHelper.DownscaleRatio;
                 }
                 else
                 {
@@ -641,7 +642,7 @@ namespace HoloLensWithOpenCVForUnityExample
 
                 DebugUtils.TrackTick();
 
-                Utils.matToTexture2D(grayMat, texture);
+                OpenCVMatUtils.MatToTexture2D(grayMat, texture);
             }
 
             if (webCamTextureToMatHelper.IsPlaying())
@@ -812,7 +813,7 @@ namespace HoloLensWithOpenCVForUnityExample
         void OnDestroy()
         {
 #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
-            webCamTextureToMatHelper.frameMatAcquired -= OnFrameMatAcquired;
+            webCamTextureToMatHelper.FrameMatAcquired -= OnFrameMatAcquired;
 #endif
             webCamTextureToMatHelper.Dispose();
             imageOptimizationHelper.Dispose();
@@ -867,7 +868,7 @@ namespace HoloLensWithOpenCVForUnityExample
         /// </summary>
         public void OnChangeCameraButtonClick()
         {
-            webCamTextureToMatHelper.requestedIsFrontFacing = !webCamTextureToMatHelper.requestedIsFrontFacing;
+            webCamTextureToMatHelper.RequestedIsFrontFacing = !webCamTextureToMatHelper.RequestedIsFrontFacing;
         }
 
         /// <summary>

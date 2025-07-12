@@ -7,8 +7,8 @@
 using HoloLensCameraStream;
 using OpenCVForUnity.CoreModule;
 using OpenCVForUnity.ImgprocModule;
-using OpenCVForUnity.UnityUtils;
-using OpenCVForUnity.UnityUtils.Helper;
+using OpenCVForUnity.UnityIntegration;
+using OpenCVForUnity.UnityIntegration.Helper.Source2Mat;
 using OpenCVForUnity.UtilsModule;
 using System;
 using System.Collections;
@@ -19,7 +19,7 @@ using UnityEngine;
 using Windows.Perception.Spatial;
 #endif
 
-namespace HoloLensWithOpenCVForUnity.UnityUtils.Helper
+namespace HoloLensWithOpenCVForUnity.UnityIntegration.Helper.Source2Mat
 {
     /// <summary>
     /// This is called every time there is a new frame image mat available.
@@ -177,7 +177,7 @@ namespace HoloLensWithOpenCVForUnity.UnityUtils.Helper
         /// You must properly initialize the HLCameraStreamToMatHelper, 
         /// including calling Play() before this event will begin firing.
         /// </summary>
-        public virtual event FrameMatAcquiredCallback frameMatAcquired;
+        public virtual event FrameMatAcquiredCallback FrameMatAcquired;
 
         protected CameraIntrinsics cameraIntrinsics;
 
@@ -192,7 +192,7 @@ namespace HoloLensWithOpenCVForUnity.UnityUtils.Helper
 
 #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
 
-        public override string requestedDeviceName
+        public override string RequestedDeviceName
         {
             get { return _requestedDeviceName; }
             set
@@ -208,7 +208,7 @@ namespace HoloLensWithOpenCVForUnity.UnityUtils.Helper
             }
         }
 
-        public override int requestedWidth
+        public override int RequestedWidth
         {
             get { return _requestedWidth; }
             set
@@ -225,7 +225,7 @@ namespace HoloLensWithOpenCVForUnity.UnityUtils.Helper
             }
         }
 
-        public override int requestedHeight
+        public override int RequestedHeight
         {
             get { return _requestedHeight; }
             set
@@ -242,7 +242,7 @@ namespace HoloLensWithOpenCVForUnity.UnityUtils.Helper
             }
         }
 
-        public override bool requestedIsFrontFacing
+        public override bool RequestedIsFrontFacing
         {
             get { return _requestedIsFrontFacing; }
             set
@@ -251,14 +251,14 @@ namespace HoloLensWithOpenCVForUnity.UnityUtils.Helper
                 {
                     _requestedIsFrontFacing = value;
                     if (hasInitDone)
-                        Initialize(_requestedIsFrontFacing, requestedFPS, rotate90Degree, IsPlaying());
+                        Initialize(_requestedIsFrontFacing, RequestedFPS, Rotate90Degree, IsPlaying());
                     else if (isInitWaiting)
-                        Initialize(_requestedIsFrontFacing, requestedFPS, rotate90Degree, autoPlayAfterInitialize);
+                        Initialize(_requestedIsFrontFacing, RequestedFPS, Rotate90Degree, autoPlayAfterInitialize);
                 }
             }
         }
 
-        public override bool rotate90Degree
+        public override bool Rotate90Degree
         {
             get { return _rotate90Degree; }
             set
@@ -274,7 +274,7 @@ namespace HoloLensWithOpenCVForUnity.UnityUtils.Helper
             }
         }
 
-        public override Source2MatHelperColorFormat outputColorFormat
+        public override Source2MatHelperColorFormat OutputColorFormat
         {
             get { return _outputColorFormat; }
             set
@@ -290,7 +290,7 @@ namespace HoloLensWithOpenCVForUnity.UnityUtils.Helper
             }
         }
 
-        public override float requestedFPS
+        public override float RequestedFPS
         {
             get { return _requestedFPS; }
             set
@@ -478,36 +478,36 @@ namespace HoloLensWithOpenCVForUnity.UnityUtils.Helper
             didUpdateThisFrame = true;
             didUpdateImageBufferInCurrentFrame = true;
 
-            if (hasInitEventCompleted && frameMatAcquired != null)
+            if (hasInitEventCompleted && FrameMatAcquired != null)
             {
-                Mat mat = new Mat(frameSampleHeight, frameSampleWidth, CvType.CV_8UC(Source2MatHelperUtils.Channels(outputColorFormat)));
+                Mat mat = new Mat(frameSampleHeight, frameSampleWidth, CvType.CV_8UC(Source2MatHelperUtils.Channels(OutputColorFormat)));
 
-                if (baseColorFormat == outputColorFormat)
+                if (baseColorFormat == OutputColorFormat)
                 {
-                    MatUtils.copyToMat<byte>(latestImageBytes, mat);
+                    OpenCVMatUtils.CopyToMat<byte>(latestImageBytes, mat);
                 }
                 else
                 {
                     Mat baseMat = new Mat(frameSampleHeight, frameSampleWidth, CvType.CV_8UC(Source2MatHelperUtils.Channels(baseColorFormat)));
-                    MatUtils.copyToMat<byte>(latestImageBytes, baseMat);
-                    Imgproc.cvtColor(baseMat, mat, Source2MatHelperUtils.ColorConversionCodes(baseColorFormat, outputColorFormat));
+                    OpenCVMatUtils.CopyToMat<byte>(latestImageBytes, baseMat);
+                    Imgproc.cvtColor(baseMat, mat, Source2MatHelperUtils.ColorConversionCodes(baseColorFormat, OutputColorFormat));
                 }
 
                 if (_rotate90Degree)
                 {
-                    Mat rotatedFrameMat = new Mat(frameSampleWidth, frameSampleHeight, CvType.CV_8UC(Source2MatHelperUtils.Channels(outputColorFormat)));
+                    Mat rotatedFrameMat = new Mat(frameSampleWidth, frameSampleHeight, CvType.CV_8UC(Source2MatHelperUtils.Channels(OutputColorFormat)));
                     Core.rotate(mat, rotatedFrameMat, Core.ROTATE_90_CLOCKWISE);
                     mat.Dispose();
 
                     FlipMat(rotatedFrameMat, _flipVertical, _flipHorizontal, false, 0);
 
-                    frameMatAcquired.Invoke(rotatedFrameMat, projectionMatrix, cameraToWorldMatrix, cameraIntrinsics);
+                    FrameMatAcquired.Invoke(rotatedFrameMat, projectionMatrix, cameraToWorldMatrix, cameraIntrinsics);
                 }
                 else
                 {
                     FlipMat(mat, _flipVertical, _flipHorizontal, false, 0);
 
-                    frameMatAcquired.Invoke(mat, projectionMatrix, cameraToWorldMatrix, cameraIntrinsics);
+                    FrameMatAcquired.Invoke(mat, projectionMatrix, cameraToWorldMatrix, cameraIntrinsics);
                 }
             }
         }
@@ -524,7 +524,7 @@ namespace HoloLensWithOpenCVForUnity.UnityUtils.Helper
             cameraParams.cameraResolutionHeight = resolution.height;
             cameraParams.cameraResolutionWidth = resolution.width;
             cameraParams.frameRate = Mathf.RoundToInt(frameRate);
-            cameraParams.pixelFormat = (outputColorFormat == Source2MatHelperColorFormat.GRAY) ? CapturePixelFormat.NV12 : CapturePixelFormat.BGRA32;
+            cameraParams.pixelFormat = (OutputColorFormat == Source2MatHelperColorFormat.GRAY) ? CapturePixelFormat.NV12 : CapturePixelFormat.BGRA32;
             cameraParams.rotateImage180Degrees = false;
             cameraParams.enableHolograms = false;
             cameraParams.enableVideoStabilization = false;
@@ -643,8 +643,8 @@ namespace HoloLensWithOpenCVForUnity.UnityUtils.Helper
 
                 ReleaseResources();
 
-                if (onDisposed != null)
-                    onDisposed.Invoke();
+                if (OnDisposed != null)
+                    OnDisposed.Invoke();
             }
 
             isInitWaiting = true;
@@ -672,8 +672,8 @@ namespace HoloLensWithOpenCVForUnity.UnityUtils.Helper
                             isInitWaiting = false;
                             CancelInitCoroutine();
 
-                            if (onErrorOccurred != null)
-                                onErrorOccurred.Invoke(Source2MatHelperErrorCode.UNKNOWN, "!result2.success");
+                            if (OnErrorOccurred != null)
+                                OnErrorOccurred.Invoke(Source2MatHelperErrorCode.UNKNOWN, "!result2.success");
                         }
                         else
                         {
@@ -717,8 +717,8 @@ namespace HoloLensWithOpenCVForUnity.UnityUtils.Helper
                         isInitWaiting = false;
                         CancelInitCoroutine();
 
-                        if (onErrorOccurred != null)
-                            onErrorOccurred.Invoke(Source2MatHelperErrorCode.CAMERA_DEVICE_NOT_EXIST, "Did not find a video capture object. You may not be using the HoloLens.");
+                        if (OnErrorOccurred != null)
+                            OnErrorOccurred.Invoke(Source2MatHelperErrorCode.CAMERA_DEVICE_NOT_EXIST, "Did not find a video capture object. You may not be using the HoloLens.");
 
                         return;
                     }
@@ -744,8 +744,8 @@ namespace HoloLensWithOpenCVForUnity.UnityUtils.Helper
                             isInitWaiting = false;
                             CancelInitCoroutine();
 
-                            if (onErrorOccurred != null)
-                                onErrorOccurred.Invoke(Source2MatHelperErrorCode.UNKNOWN, "!result.success");
+                            if (OnErrorOccurred != null)
+                                OnErrorOccurred.Invoke(Source2MatHelperErrorCode.UNKNOWN, "!result.success");
                         }
                         else
                         {
@@ -769,28 +769,28 @@ namespace HoloLensWithOpenCVForUnity.UnityUtils.Helper
                 {
                     Debug.Log("HLCameraStream2MatHelper:: " + "name:" + "" + " width:" + frameSampleWidth + " height:" + frameSampleHeight + " fps:" + cameraParams.frameRate);
 
-                    baseColorFormat = (outputColorFormat == Source2MatHelperColorFormat.GRAY) ? Source2MatHelperColorFormat.GRAY : Source2MatHelperColorFormat.BGRA;
+                    baseColorFormat = (OutputColorFormat == Source2MatHelperColorFormat.GRAY) ? Source2MatHelperColorFormat.GRAY : Source2MatHelperColorFormat.BGRA;
 
                     baseMat = new Mat(frameSampleHeight, frameSampleWidth, CvType.CV_8UC(Source2MatHelperUtils.Channels(baseColorFormat)));
 
-                    if (baseColorFormat == outputColorFormat)
+                    if (baseColorFormat == OutputColorFormat)
                     {
                         frameMat = baseMat;
                     }
                     else
                     {
-                        frameMat = new Mat(baseMat.rows(), baseMat.cols(), CvType.CV_8UC(Source2MatHelperUtils.Channels(outputColorFormat)));
+                        frameMat = new Mat(baseMat.rows(), baseMat.cols(), CvType.CV_8UC(Source2MatHelperUtils.Channels(OutputColorFormat)));
                     }
 
                     if (_rotate90Degree)
-                        rotatedFrameMat = new Mat(frameMat.cols(), frameMat.rows(), CvType.CV_8UC(Source2MatHelperUtils.Channels(outputColorFormat)));
+                        rotatedFrameMat = new Mat(frameMat.cols(), frameMat.rows(), CvType.CV_8UC(Source2MatHelperUtils.Channels(OutputColorFormat)));
 
                     isInitWaiting = false;
                     hasInitDone = true;
                     initCoroutine = null;
 
-                    if (onInitialized != null)
-                        onInitialized.Invoke();
+                    if (OnInitialized != null)
+                        OnInitialized.Invoke();
 
                     hasInitEventCompleted = true;
 
@@ -820,16 +820,16 @@ namespace HoloLensWithOpenCVForUnity.UnityUtils.Helper
                     isInitWaiting = false;
                     initCoroutine = null;
 
-                    if (onErrorOccurred != null)
-                        onErrorOccurred.Invoke(Source2MatHelperErrorCode.TIMEOUT, string.Empty);
+                    if (OnErrorOccurred != null)
+                        OnErrorOccurred.Invoke(Source2MatHelperErrorCode.TIMEOUT, string.Empty);
                 }
                 else
                 {
                     isInitWaiting = false;
                     initCoroutine = null;
 
-                    if (onErrorOccurred != null)
-                        onErrorOccurred.Invoke(Source2MatHelperErrorCode.TIMEOUT, string.Empty);
+                    if (OnErrorOccurred != null)
+                        OnErrorOccurred.Invoke(Source2MatHelperErrorCode.TIMEOUT, string.Empty);
                 }
             }
         }
@@ -1017,14 +1017,14 @@ namespace HoloLensWithOpenCVForUnity.UnityUtils.Helper
                 return (rotatedFrameMat != null) ? rotatedFrameMat : frameMat;
             }
 
-            if (baseColorFormat == outputColorFormat)
+            if (baseColorFormat == OutputColorFormat)
             {
-                MatUtils.copyToMat<byte>(latestImageBytes, frameMat);
+                OpenCVMatUtils.CopyToMat<byte>(latestImageBytes, frameMat);
             }
             else
             {
-                MatUtils.copyToMat<byte>(latestImageBytes, baseMat);
-                Imgproc.cvtColor(baseMat, frameMat, Source2MatHelperUtils.ColorConversionCodes(baseColorFormat, outputColorFormat));
+                OpenCVMatUtils.CopyToMat<byte>(latestImageBytes, baseMat);
+                Imgproc.cvtColor(baseMat, frameMat, Source2MatHelperUtils.ColorConversionCodes(baseColorFormat, OutputColorFormat));
             }
 
             if (rotatedFrameMat != null)
@@ -1146,7 +1146,7 @@ namespace HoloLensWithOpenCVForUnity.UnityUtils.Helper
             {
                 CancelInitCoroutine();
 
-                frameMatAcquired = null;
+                FrameMatAcquired = null;
 
                 if (videoCapture != null)
                 {
@@ -1159,7 +1159,7 @@ namespace HoloLensWithOpenCVForUnity.UnityUtils.Helper
             }
             else if (hasInitDone)
             {
-                frameMatAcquired = null;
+                FrameMatAcquired = null;
 
                 videoCapture.FrameSampleAcquired -= OnFrameSampleAcquired;
 
@@ -1167,8 +1167,8 @@ namespace HoloLensWithOpenCVForUnity.UnityUtils.Helper
 
                 ReleaseResources();
 
-                if (onDisposed != null)
-                    onDisposed.Invoke();
+                if (OnDisposed != null)
+                    OnDisposed.Invoke();
             }
         }
 

@@ -4,7 +4,7 @@ using UnityEngine.SceneManagement;
 using System.Collections.Generic;
 using OpenCVForUnity.CoreModule;
 using OpenCVForUnity.ObjdetectModule;
-using OpenCVForUnity.UnityUtils;
+using OpenCVForUnity.UnityIntegration;
 using OpenCVForUnity.ImgprocModule;
 using System.Collections;
 using System.Linq;
@@ -57,7 +57,7 @@ namespace HoloLensWithOpenCVForUnityExample
                 text.text = "Preparing file access...";
             }
 
-            string cascade_filepath = await Utils.getFilePathAsyncTask("OpenCVForUnity/objdetect/haarcascade_frontalface_alt.xml", cancellationToken: cts.Token);
+            string cascade_filepath = await OpenCVEnv.GetFilePathTaskAsync("OpenCVForUnityExample/objdetect/haarcascade_frontalface_alt.xml", cancellationToken: cts.Token);
 
             if (text != null)
             {
@@ -197,7 +197,7 @@ namespace HoloLensWithOpenCVForUnityExample
                 Mat grayMat = new Mat(bgraMat.rows(), bgraMat.cols(), CvType.CV_8UC1);
 
                 // For BGRA or BGR format, use the texture2DToMatRaw method.
-                Utils.texture2DToMatRaw(targetTexture, bgraMat);
+                OpenCVMatUtils.Texture2DToMatRaw(targetTexture, bgraMat);
 
                 Imgproc.cvtColor(bgraMat, grayMat, Imgproc.COLOR_BGRA2GRAY);
                 Imgproc.equalizeHist(grayMat, grayMat);
@@ -219,7 +219,7 @@ namespace HoloLensWithOpenCVForUnityExample
                 Imgproc.putText(bgraMat, targetTexture.format + " W:" + bgraMat.width() + " H:" + bgraMat.height(), new Point(5, bgraMat.rows() - 10), Imgproc.FONT_HERSHEY_SIMPLEX, 1.5, new Scalar(255, 0, 0, 255), 2, Imgproc.LINE_AA, false);
 
                 // For BGRA or BGR format, use the matToTexture2DRaw method.
-                Utils.matToTexture2DRaw(bgraMat, targetTexture);
+                OpenCVMatUtils.MatToTexture2DRaw(bgraMat, targetTexture);
                 bgraMat.Dispose();
                 grayMat.Dispose();
 

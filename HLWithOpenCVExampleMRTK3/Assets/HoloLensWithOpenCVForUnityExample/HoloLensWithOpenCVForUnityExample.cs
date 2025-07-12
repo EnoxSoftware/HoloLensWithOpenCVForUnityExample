@@ -1,4 +1,5 @@
 using OpenCVForUnity.CoreModule;
+using OpenCVForUnity.UnityIntegration;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -21,7 +22,7 @@ namespace HoloLensWithOpenCVForUnityExample
         {
             exampleTitle.text = "HoloLensWithOpenCVForUnity Example " + Application.version;
 
-            versionInfo.text = Core.NATIVE_LIBRARY_NAME + " " + OpenCVForUnity.UnityUtils.Utils.getVersion() + " (" + Core.VERSION + ")";
+            versionInfo.text = Core.NATIVE_LIBRARY_NAME + " " + OpenCVEnv.GetVersion() + " (" + Core.VERSION + ")";
             versionInfo.text += " / UnityEditor " + Application.unityVersion;
             versionInfo.text += " / ";
 

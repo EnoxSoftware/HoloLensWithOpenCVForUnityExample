@@ -1,28 +1,60 @@
-using OpenCVForUnity.CoreModule;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using OpenCVForUnity.CoreModule;
 using UnityEngine;
 using Rect = OpenCVForUnity.CoreModule.Rect;
 
 namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
 {
     /// <summary>
-    /// Rectangle tracker.
+    /// Rectangle tracker for tracking detected face rectangles across frames.
+    /// v2.0.0
+    /// This class manages multiple face rectangles, handles object correspondence,
+    /// and provides smoothing and state management for tracked objects.
     /// Referring to https://github.com/Itseez/opencv/blob/master/modules/objdetect/src/detection_based_tracker.cpp.
-    /// v 1.0.4
     /// </summary>
     public class RectangleTracker
     {
-        public List<TrackedObject> trackedObjects
+        // Enums
+        /// <summary>
+        /// States for rectangle correspondence during tracking.
+        /// </summary>
+        public enum TrackedRectState : int
+        {
+            /// <summary>
+            /// New rectangle that hasn't been assigned to any tracked object.
+            /// </summary>
+            NEW_RECTANGLE = -1,
+
+            /// <summary>
+            /// Rectangle that intersects with another rectangle and is excluded from tracking.
+            /// </summary>
+            INTERSECTED_RECTANGLE = -2
+        }
+
+        // Private Fields
+        private int _nextId = 0;
+        private List<TrackedObject> _trackedObjects;
+        private TrackerParameters _trackerParameters;
+        private List<float> _weightsPositionsSmoothing = new List<float>();
+        private List<float> _weightsSizesSmoothing = new List<float>();
+
+
+        // Public Properties
+        /// <summary>
+        /// Gets the list of currently tracked objects.
+        /// </summary>
+        public List<TrackedObject> TrackedObjects
         {
             get { return _trackedObjects; }
         }
 
-        private List<TrackedObject> _trackedObjects;
-
-
-        public TrackerParameters trackerParameters
+        /// <summary>
+        /// Gets or sets the tracker parameters for controlling tracking behavior.
+        /// </summary>
+        /// <exception cref="ArgumentNullException">Thrown when setting null value.</exception>
+        public TrackerParameters TrackerParameters
         {
             get { return _trackerParameters; }
             set
@@ -35,10 +67,11 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
             }
         }
 
-        private TrackerParameters _trackerParameters;
-
-
-        public List<float> weightsPositionsSmoothing
+        /// <summary>
+        /// Gets or sets the weights for position smoothing calculation.
+        /// </summary>
+        /// <exception cref="ArgumentNullException">Thrown when setting null value.</exception>
+        public List<float> WeightsPositionsSmoothing
         {
             get { return _weightsPositionsSmoothing; }
             set
@@ -51,9 +84,11 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
             }
         }
 
-        private List<float> _weightsPositionsSmoothing = new List<float>();
-
-        public List<float> weightsSizesSmoothing
+        /// <summary>
+        /// Gets or sets the weights for size smoothing calculation.
+        /// </summary>
+        /// <exception cref="ArgumentNullException">Thrown when setting null value.</exception>
+        public List<float> WeightsSizesSmoothing
         {
             get { return _weightsSizesSmoothing; }
             set
@@ -66,8 +101,11 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
             }
         }
 
-        private List<float> _weightsSizesSmoothing = new List<float>();
-
+        // Public Methods
+        /// <summary>
+        /// Initializes a new instance of the RectangleTracker class.
+        /// </summary>
+        /// <param name="trackerParamerers">Optional tracker parameters. If null, default parameters will be used.</param>
         public RectangleTracker(TrackerParameters trackerParamerers = null)
         {
             _trackedObjects = new List<TrackedObject>();
@@ -87,13 +125,11 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
             _weightsSizesSmoothing.Add(0.2f);
         }
 
-        public enum TrackedRectState : int
-        {
-            NEW_RECTANGLE = -1,
-            INTERSECTED_RECTANGLE = -2
-        }
-
-
+        /// <summary>
+        /// Gets the current tracked objects as rectangles.
+        /// </summary>
+        /// <param name="result">List to store the tracked rectangles.</param>
+        /// <param name="smoothing">Whether to apply smoothing to the rectangle positions and sizes.</param>
         public void GetObjects(List<Rect> result, bool smoothing = true)
         {
             result.Clear();
@@ -108,10 +144,10 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
                 }
                 else
                 {
-                    r = _trackedObjects[i].position;
+                    r = _trackedObjects[i].Position;
                 }
 
-                if (_trackedObjects[i].state > TrackedState.NEW_DISPLAYED && _trackedObjects[i].state < TrackedState.NEW_HIDED)
+                if (_trackedObjects[i].State > TrackedState.NEW_DISPLAYED && _trackedObjects[i].State < TrackedState.NEW_HIDED)
                     result.Add(r);
 
                 //LOGD("DetectionBasedTracker::process: found a object with SIZE %d x %d, rect={%d, %d, %d x %d}", r.width, r.height, r.x, r.y, r.width, r.height);
@@ -119,6 +155,11 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
             }
         }
 
+        /// <summary>
+        /// Gets the current tracked objects with detailed tracking information.
+        /// </summary>
+        /// <param name="result">List to store the tracked rectangles with tracking metadata.</param>
+        /// <param name="smoothing">Whether to apply smoothing to the rectangle positions and sizes.</param>
         public void GetObjects(List<TrackedRect> result, bool smoothing = true)
         {
             result.Clear();
@@ -133,16 +174,22 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
                 }
                 else
                 {
-                    r = _trackedObjects[i].position;
+                    r = _trackedObjects[i].Position;
                 }
 
-                result.Add(new TrackedRect(_trackedObjects[i].id, r, _trackedObjects[i].state, _trackedObjects[i].numDetectedFrames, _trackedObjects[i].numFramesNotDetected));
+                result.Add(new TrackedRect(_trackedObjects[i].Id, r, _trackedObjects[i].State, _trackedObjects[i].NumDetectedFrames, _trackedObjects[i].NumFramesNotDetected));
 
                 //LOGD("DetectionBasedTracker::process: found a object with SIZE %d x %d, rect={%d, %d, %d x %d}", r.width, r.height, r.x, r.y, r.width, r.height);
                 //Debug.Log("GetObjects" + r.width + " " + r.height + " " + r.x + " " + r.y + " " + r.width + " " + r.height + " " + trackedObjects[i].state + " " + trackedObjects[i].numDetectedFrames + " " + trackedObjects[i].numFramesNotDetected);
             }
         }
 
+        /// <summary>
+        /// Updates the tracked objects with newly detected rectangles.
+        /// This method handles object correspondence, state management, and tracking lifecycle.
+        /// </summary>
+        /// <param name="detectedObjects">List of rectangles detected in the current frame.</param>
+        /// <exception cref="ArgumentNullException">Thrown when detectedObjects is null.</exception>
         public void UpdateTrackedObjects(List<Rect> detectedObjects)
         {
             if (detectedObjects == null)
@@ -155,7 +202,7 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
 
             for (int i = 0; i < N1; i++)
             {
-                _trackedObjects[i].numDetectedFrames++;
+                _trackedObjects[i].NumDetectedFrames++;
             }
 
             int[] correspondence = Enumerable.Repeat<int>((int)TrackedRectState.NEW_RECTANGLE, N2).ToArray();
@@ -168,10 +215,6 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
                 int bestIndex = -1;
                 int bestArea = -1;
 
-                //int numpositions = (int)curObject.lastPositions.Count;
-                //if (numpositions > 0) UnityEngine.Debug.LogError("numpositions > 0 is false");
-
-                //OpenCVRect prevRect = curObject.lastPositions[numpositions - 1];
                 Rect prevRect = correctionRects[i];
 
                 for (int j = 0; j < N2; j++)
@@ -189,7 +232,7 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
                         continue;
                     }
 
-                    if (IsCollideByRectangle(prevRect, detectedObjects[j], _trackerParameters.coeffRectangleOverlap))
+                    if (IsCollideByRectangle(prevRect, detectedObjects[j], _trackerParameters.CoeffRectangleOverlap))
                     {
                         Rect r = Intersect(prevRect, detectedObjects[j]);
                         if ((r.width > 0) && (r.height > 0))
@@ -222,7 +265,7 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
                         if (correspondence[j] >= 0)
                             continue;
 
-                        if (IsCollideByRectangle(detectedObjects[j], bestRect, _trackerParameters.coeffRectangleOverlap))
+                        if (IsCollideByRectangle(detectedObjects[j], bestRect, _trackerParameters.CoeffRectangleOverlap))
                         {
                             Rect r = Intersect(detectedObjects[j], bestRect);
 
@@ -238,7 +281,7 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
                 else
                 {
                     //Debug.Log("DetectionBasedTracker::updateTrackedObjects: There is no correspondence for i= " + i);
-                    curObject.numFramesNotDetected++;
+                    curObject.NumFramesNotDetected++;
                 }
             }
 
@@ -247,23 +290,25 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
             {
                 int i = correspondence[j];
                 if (i >= 0)
-                {//add position
+                {
+                    //add position
                     //Debug.Log("DetectionBasedTracker::updateTrackedObjects: add position");
 
-                    _trackedObjects[i].lastPositions.Add(detectedObjects[j]);
-                    while ((int)_trackedObjects[i].lastPositions.Count > (int)_trackerParameters.numLastPositionsToTrack)
+                    _trackedObjects[i].LastPositions.Add(detectedObjects[j]);
+                    while ((int)_trackedObjects[i].LastPositions.Count > (int)_trackerParameters.NumLastPositionsToTrack)
                     {
-                        _trackedObjects[i].lastPositions.Remove(_trackedObjects[i].lastPositions[0]);
+                        _trackedObjects[i].LastPositions.Remove(_trackedObjects[i].LastPositions[0]);
                     }
-                    _trackedObjects[i].numFramesNotDetected = 0;
-                    if (_trackedObjects[i].state != TrackedState.DELETED)
-                        _trackedObjects[i].state = TrackedState.DISPLAYED;
+                    _trackedObjects[i].NumFramesNotDetected = 0;
+                    if (_trackedObjects[i].State != TrackedState.DELETED)
+                        _trackedObjects[i].State = TrackedState.DISPLAYED;
                 }
                 else if (i == (int)TrackedRectState.NEW_RECTANGLE)
-                { //new object
+                {
+                    //new object
                     //Debug.Log("DetectionBasedTracker::updateTrackedObjects: new object");
 
-                    _trackedObjects.Add(new TrackedObject(detectedObjects[j]));
+                    _trackedObjects.Add(new TrackedObject(detectedObjects[j], _nextId++));
                 }
                 else
                 {
@@ -271,56 +316,62 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
                 }
             }
 
-
             int t = 0;
             TrackedObject it;
             while (t < _trackedObjects.Count)
             {
                 it = _trackedObjects[t];
 
-                if (it.state == TrackedState.DELETED)
+                if (it.State == TrackedState.DELETED)
                 {
                     _trackedObjects.Remove(it);
                 }
-                else if ((it.numFramesNotDetected > _trackerParameters.maxTrackLifetime)//ALL
+                else if ((it.NumFramesNotDetected > _trackerParameters.MaxTrackLifetime)//ALL
                          ||
-                         ((it.numDetectedFrames <= _trackerParameters.numStepsToWaitBeforeFirstShow)
+                         ((it.NumDetectedFrames <= _trackerParameters.NumStepsToWaitBeforeFirstShow)
                          &&
-                         (it.numFramesNotDetected > _trackerParameters.numStepsToTrackWithoutDetectingIfObjectHasNotBeenShown)))
+                         (it.NumFramesNotDetected > _trackerParameters.NumStepsToTrackWithoutDetectingIfObjectHasNotBeenShown)))
                 {
-                    it.state = TrackedState.DELETED;
+                    it.State = TrackedState.DELETED;
                     t++;
                 }
-                else if (it.state >= TrackedState.DISPLAYED)
-                {//DISPLAYED, NEW_DISPLAYED, HIDED
+                else if (it.State >= TrackedState.DISPLAYED)
+                {
+                    //DISPLAYED, NEW_DISPLAYED, HIDED
 
-                    if (it.numDetectedFrames < _trackerParameters.numStepsToWaitBeforeFirstShow)
+                    if (it.NumDetectedFrames < _trackerParameters.NumStepsToWaitBeforeFirstShow)
                     {
-                        it.state = TrackedState.PENDING;
+                        it.State = TrackedState.PENDING;
                     }
-                    else if (it.numDetectedFrames == _trackerParameters.numStepsToWaitBeforeFirstShow)
+                    else if (it.NumDetectedFrames == _trackerParameters.NumStepsToWaitBeforeFirstShow)
                     {
                         //i, trackedObjects[i].numDetectedFrames, innerParameters.numStepsToWaitBeforeFirstShow);
-                        it.state = TrackedState.NEW_DISPLAYED;
+                        it.State = TrackedState.NEW_DISPLAYED;
                     }
-                    else if (it.numFramesNotDetected == _trackerParameters.numStepsToShowWithoutDetecting)
+                    else if (it.NumFramesNotDetected == _trackerParameters.NumStepsToShowWithoutDetecting)
                     {
-                        it.state = TrackedState.NEW_HIDED;
+                        it.State = TrackedState.NEW_HIDED;
                     }
-                    else if (it.numFramesNotDetected > _trackerParameters.numStepsToShowWithoutDetecting)
+                    else if (it.NumFramesNotDetected > _trackerParameters.NumStepsToShowWithoutDetecting)
                     {
-                        it.state = TrackedState.HIDED;
+                        it.State = TrackedState.HIDED;
                     }
 
                     t++;
                 }
                 else
-                {//NEW
+                {
+                    //NEW
                     t++;
                 }
             }
         }
 
+        /// <summary>
+        /// Creates predicted rectangles based on the speed of tracked objects.
+        /// Uses the last two positions to predict where objects should be in the current frame.
+        /// </summary>
+        /// <returns>Array of predicted rectangles for each tracked object.</returns>
         public Rect[] CreateCorrectionBySpeedOfRects()
         {
             //Debug.Log("DetectionBasedTracker::process: get _rectsWhereRegions from previous positions");
@@ -329,24 +380,17 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
             int count = _trackedObjects.Count;
             for (int i = 0; i < count; i++)
             {
-                int n = _trackedObjects[i].lastPositions.Count;
-                //if (n > 0) UnityEngine.Debug.LogError("n > 0 is false");
+                int n = _trackedObjects[i].LastPositions.Count;
 
-                Rect r = _trackedObjects[i].lastPositions[n - 1].clone();
-
-                //if (r.area() == 0)
-                //{
-                //    Debug.Log("DetectionBasedTracker::process: ERROR: ATTENTION: strange algorithm's behavior: trackedObjects[i].rect() is empty");
-                //    continue;
-                //}
+                Rect r = _trackedObjects[i].LastPositions[n - 1].clone();
 
                 //correction by speed of rectangle
                 if (n > 1)
                 {
                     Point center = CenterRect(r);
-                    Point center_prev = CenterRect(_trackedObjects[i].lastPositions[n - 2]);
-                    Point shift = new Point((center.x - center_prev.x) * _trackerParameters.coeffObjectSpeedUsingInPrediction,
-                                      (center.y - center_prev.y) * _trackerParameters.coeffObjectSpeedUsingInPrediction);
+                    Point _centerPrev = CenterRect(_trackedObjects[i].LastPositions[n - 2]);
+                    Point shift = new Point((center.x - _centerPrev.x) * _trackerParameters.CoeffObjectSpeedUsingInPrediction,
+                                      (center.y - _centerPrev.y) * _trackerParameters.CoeffObjectSpeedUsingInPrediction);
 
                     r.x += (int)Math.Round(shift.x);
                     r.y += (int)Math.Round(shift.y);
@@ -358,6 +402,10 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
             return rectsWhereRegions;
         }
 
+        /// <summary>
+        /// Creates raw rectangles from the current positions of tracked objects without prediction.
+        /// </summary>
+        /// <returns>Array of current rectangles for each tracked object.</returns>
         public Rect[] CreateRawRects()
         {
             Rect[] rectsWhereRegions = new Rect[_trackedObjects.Count];
@@ -365,12 +413,30 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
             int count = _trackedObjects.Count;
             for (int i = 0; i < count; i++)
             {
-                rectsWhereRegions[i] = _trackedObjects[i].position;
+                rectsWhereRegions[i] = _trackedObjects[i].Position;
             }
 
             return rectsWhereRegions;
         }
 
+        /// <summary>
+        /// Resets the tracker by clearing all tracked objects and resetting the ID counter.
+        /// </summary>
+        public void Reset()
+        {
+            _trackedObjects.Clear();
+            _nextId = 0;
+        }
+
+        /// <summary>
+        /// Disposes the tracker by calling Reset().
+        /// </summary>
+        public void Dispose()
+        {
+            Reset();
+        }
+
+        // Private Methods
         private Point CenterRect(Rect r)
         {
             return new Point(r.x + (r.width / 2), r.y + (r.height / 2));
@@ -383,7 +449,7 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
             List<float> weightsSizesSmoothing = _weightsSizesSmoothing;
             List<float> weightsPositionsSmoothing = _weightsPositionsSmoothing;
 
-            List<Rect> lastPositions = _trackedObjects[i].lastPositions;
+            List<Rect> lastPositions = _trackedObjects[i].LastPositions;
 
             int N = lastPositions.Count;
             if (N <= 0)
@@ -459,11 +525,6 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
             return res;
         }
 
-        public void Reset()
-        {
-            _trackedObjects.Clear();
-        }
-
         private Rect Intersect(Rect a, Rect b)
         {
             int x1 = Math.Max(a.x, b.x);
@@ -476,21 +537,6 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
             else
                 return new Rect();
         }
-
-        //private bool IsCollideByCircle(Rect a, Rect b, float coeffRectangleOverlap)
-        //{
-        //    int r1 = (int)(a.width / 2.0f);
-        //    int r2 = (int)(b.width / 2.0f);
-        //    int px1 = a.x + r1;
-        //    int py1 = a.y + r1;
-        //    int px2 = b.x + r2;
-        //    int py2 = b.y + r2;
-
-        //    if ((px2 - px1) * (px2 - px1) + (py2 - py1) * (py2 - py1) <= (r1 + r2) * (r1 + r2) * coeffRectangleOverlap)
-        //        return true;
-        //    else
-        //        return false;
-        //}
 
         private bool IsCollideByRectangle(Rect a, Rect b, float coeffRectangleOverlap)
         {
@@ -512,11 +558,6 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
                 return true;
             else
                 return false;
-        }
-
-        public void Dispose()
-        {
-            Reset();
         }
     }
 }

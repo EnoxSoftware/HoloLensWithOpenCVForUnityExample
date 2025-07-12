@@ -2815,11 +2815,12 @@ MonoBehaviour:
   _flipHorizontal: 0
   _outputColorFormat: 4
   _timeoutFrameCount: 300
-  onInitialized:
+  _onInitialized:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1076083695}
-        m_TargetAssemblyTypeName: 
+        m_TargetAssemblyTypeName: HoloLensWithOpenCVForUnityExample.HLCameraStream2MatHelperExample,
+          Assembly-CSharp
         m_MethodName: OnWebCamTextureToMatHelperInitialized
         m_Mode: 1
         m_Arguments:
@@ -2830,11 +2831,12 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  onDisposed:
+  _onDisposed:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1076083695}
-        m_TargetAssemblyTypeName: 
+        m_TargetAssemblyTypeName: HoloLensWithOpenCVForUnityExample.HLCameraStream2MatHelperExample,
+          Assembly-CSharp
         m_MethodName: OnWebCamTextureToMatHelperDisposed
         m_Mode: 1
         m_Arguments:
@@ -2845,11 +2847,12 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  onErrorOccurred:
+  _onErrorOccurred:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1076083695}
-        m_TargetAssemblyTypeName: 
+        m_TargetAssemblyTypeName: HoloLensWithOpenCVForUnityExample.HLCameraStream2MatHelperExample,
+          Assembly-CSharp
         m_MethodName: OnWebCamTextureToMatHelperErrorOccurred
         m_Mode: 0
         m_Arguments:
@@ -2860,7 +2863,6 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  avoidAndroidFrontCameraLowLightIssue: 0
 --- !u!1 &1083164659
 GameObject:
   m_ObjectHideFlags: 0

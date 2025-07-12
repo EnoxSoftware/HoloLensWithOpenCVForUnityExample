@@ -1,9 +1,9 @@
 using HoloLensCameraStream;
-using HoloLensWithOpenCVForUnity.UnityUtils.Helper;
+using HoloLensWithOpenCVForUnity.UnityIntegration.Helper.Source2Mat;
 using OpenCVForUnity.CoreModule;
 using OpenCVForUnity.ImgprocModule;
-using OpenCVForUnity.UnityUtils;
-using OpenCVForUnity.UnityUtils.Helper;
+using OpenCVForUnity.UnityIntegration;
+using OpenCVForUnity.UnityIntegration.Helper.Source2Mat;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -91,15 +91,15 @@ namespace HoloLensWithOpenCVForUnityExample
         {
             webCamTextureToMatHelper = gameObject.GetComponent<HLCameraStream2MatHelper>();
 #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
-            webCamTextureToMatHelper.frameMatAcquired += OnFrameMatAcquired;
+            webCamTextureToMatHelper.FrameMatAcquired += OnFrameMatAcquired;
 #endif
-            webCamTextureToMatHelper.outputColorFormat = Source2MatHelperColorFormat.BGRA;
+            webCamTextureToMatHelper.OutputColorFormat = Source2MatHelperColorFormat.BGRA;
             webCamTextureToMatHelper.Initialize();
 
             // Update GUI state
-            rotate90DegreeToggle.isOn = webCamTextureToMatHelper.rotate90Degree;
-            flipVerticalToggle.isOn = webCamTextureToMatHelper.flipVertical;
-            flipHorizontalToggle.isOn = webCamTextureToMatHelper.flipHorizontal;
+            rotate90DegreeToggle.isOn = webCamTextureToMatHelper.Rotate90Degree;
+            flipVerticalToggle.isOn = webCamTextureToMatHelper.FlipVertical;
+            flipHorizontalToggle.isOn = webCamTextureToMatHelper.FlipHorizontal;
             applyComicFilterToggle.isOn = applyComicFilter;
             VignetteScaleSlider.value = vignetteScale;
         }
@@ -121,7 +121,7 @@ namespace HoloLensWithOpenCVForUnityExample
 
             //Debug.Log("Screen.width " + Screen.width + " Screen.height " + Screen.height + " Screen.orientation " + Screen.orientation);
 
-            DebugUtils.AddDebugStr(webCamTextureToMatHelper.outputColorFormat.ToString() + " " + webCamTextureToMatHelper.GetWidth() + " x " + webCamTextureToMatHelper.GetHeight() + " : " + webCamTextureToMatHelper.GetFPS());
+            DebugUtils.AddDebugStr(webCamTextureToMatHelper.OutputColorFormat.ToString() + " " + webCamTextureToMatHelper.GetWidth() + " x " + webCamTextureToMatHelper.GetHeight() + " : " + webCamTextureToMatHelper.GetFPS());
 
 
             Matrix4x4 projectionMatrix;
@@ -216,7 +216,7 @@ namespace HoloLensWithOpenCVForUnityExample
                 if (!webCamTextureToMatHelper.IsPlaying()) return;
 
                 // For BGRA or BGR format, use the fastMatToTexture2D method.
-                Utils.fastMatToTexture2D(bgraMat, texture);
+                OpenCVMatUtils.MatToTexture2D(bgraMat, texture);
                 bgraMat.Dispose();
 
                 Matrix4x4 worldToCameraMatrix = cameraToWorldMatrix.inverse;
@@ -280,7 +280,7 @@ namespace HoloLensWithOpenCVForUnityExample
                 DebugUtils.TrackTick();
 
                 // For BGRA or BGR format, use the matToTexture2DRaw method.
-                Utils.matToTexture2DRaw(bgraMat, texture);
+                OpenCVMatUtils.MatToTexture2DRaw(bgraMat, texture);
             }
 
             if (webCamTextureToMatHelper.IsPlaying())
@@ -342,7 +342,7 @@ namespace HoloLensWithOpenCVForUnityExample
         void OnDestroy()
         {
 #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
-            webCamTextureToMatHelper.frameMatAcquired -= OnFrameMatAcquired;
+            webCamTextureToMatHelper.FrameMatAcquired -= OnFrameMatAcquired;
 #endif
             webCamTextureToMatHelper.Dispose();
         }
@@ -384,7 +384,7 @@ namespace HoloLensWithOpenCVForUnityExample
         /// </summary>
         public void OnChangeCameraButtonClick()
         {
-            webCamTextureToMatHelper.requestedIsFrontFacing = !webCamTextureToMatHelper.requestedIsFrontFacing;
+            webCamTextureToMatHelper.RequestedIsFrontFacing = !webCamTextureToMatHelper.RequestedIsFrontFacing;
         }
 
         /// <summary>
@@ -392,9 +392,9 @@ namespace HoloLensWithOpenCVForUnityExample
         /// </summary>
         public void OnRotate90DegreeToggleValueChanged()
         {
-            if (rotate90DegreeToggle.isOn != webCamTextureToMatHelper.rotate90Degree)
+            if (rotate90DegreeToggle.isOn != webCamTextureToMatHelper.Rotate90Degree)
             {
-                webCamTextureToMatHelper.rotate90Degree = rotate90DegreeToggle.isOn;
+                webCamTextureToMatHelper.Rotate90Degree = rotate90DegreeToggle.isOn;
             }
         }
 
@@ -403,9 +403,9 @@ namespace HoloLensWithOpenCVForUnityExample
         /// </summary>
         public void OnFlipVerticalToggleValueChanged()
         {
-            if (flipVerticalToggle.isOn != webCamTextureToMatHelper.flipVertical)
+            if (flipVerticalToggle.isOn != webCamTextureToMatHelper.FlipVertical)
             {
-                webCamTextureToMatHelper.flipVertical = flipVerticalToggle.isOn;
+                webCamTextureToMatHelper.FlipVertical = flipVerticalToggle.isOn;
             }
         }
 
@@ -414,9 +414,9 @@ namespace HoloLensWithOpenCVForUnityExample
         /// </summary>
         public void OnFlipHorizontalToggleValueChanged()
         {
-            if (flipHorizontalToggle.isOn != webCamTextureToMatHelper.flipHorizontal)
+            if (flipHorizontalToggle.isOn != webCamTextureToMatHelper.FlipHorizontal)
             {
-                webCamTextureToMatHelper.flipHorizontal = flipHorizontalToggle.isOn;
+                webCamTextureToMatHelper.FlipHorizontal = flipHorizontalToggle.isOn;
             }
         }
 

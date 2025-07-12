@@ -1,11 +1,12 @@
 using HoloLensCameraStream;
-using HoloLensWithOpenCVForUnity.UnityUtils.Helper;
+using HoloLensWithOpenCVForUnity.UnityIntegration.Helper.Source2Mat;
 using OpenCVForUnity.Calib3dModule;
 using OpenCVForUnity.CoreModule;
 using OpenCVForUnity.ImgprocModule;
 using OpenCVForUnity.ObjdetectModule;
-using OpenCVForUnity.UnityUtils;
-using OpenCVForUnity.UnityUtils.Helper;
+using OpenCVForUnity.UnityIntegration;
+using OpenCVForUnity.UnityIntegration.Helper.Optimization;
+using OpenCVForUnity.UnityIntegration.Helper.Source2Mat;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,6 +15,7 @@ using System.Xml.Serialization;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using static OpenCVForUnity.UnityIntegration.OpenCVARUtils;
 
 namespace HoloLensWithOpenCVForUnityExample
 {
@@ -255,9 +257,9 @@ namespace HoloLensWithOpenCVForUnityExample
             imageOptimizationHelper = gameObject.GetComponent<ImageOptimizationHelper>();
             webCamTextureToMatHelper = gameObject.GetComponent<HLCameraStream2MatHelper>();
 #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
-            webCamTextureToMatHelper.frameMatAcquired += OnFrameMatAcquired;
+            webCamTextureToMatHelper.FrameMatAcquired += OnFrameMatAcquired;
 #endif
-            webCamTextureToMatHelper.outputColorFormat = Source2MatHelperColorFormat.GRAY;
+            webCamTextureToMatHelper.OutputColorFormat = Source2MatHelperColorFormat.GRAY;
             webCamTextureToMatHelper.Initialize();
         }
 
@@ -276,7 +278,7 @@ namespace HoloLensWithOpenCVForUnityExample
             if (enableDownScale)
             {
                 downScaleMat = imageOptimizationHelper.GetDownScaleMat(grayMat);
-                DOWNSCALE_RATIO = imageOptimizationHelper.downscaleRatio;
+                DOWNSCALE_RATIO = imageOptimizationHelper.DownscaleRatio;
             }
             else
             {
@@ -296,7 +298,7 @@ namespace HoloLensWithOpenCVForUnityExample
             //Debug.Log("Screen.width " + Screen.width + " Screen.height " + Screen.height + " Screen.orientation " + Screen.orientation);
 
 
-            DebugUtils.AddDebugStr(webCamTextureToMatHelper.outputColorFormat.ToString() + " " + webCamTextureToMatHelper.GetWidth() + " x " + webCamTextureToMatHelper.GetHeight() + " : " + webCamTextureToMatHelper.GetFPS());
+            DebugUtils.AddDebugStr(webCamTextureToMatHelper.OutputColorFormat.ToString() + " " + webCamTextureToMatHelper.GetWidth() + " x " + webCamTextureToMatHelper.GetHeight() + " : " + webCamTextureToMatHelper.GetFPS());
             if (enableDownScale)
                 DebugUtils.AddDebugStr("enableDownScale = true: " + DOWNSCALE_RATIO + " / " + width + " x " + height);
 
@@ -431,13 +433,13 @@ namespace HoloLensWithOpenCVForUnityExample
 
 
             // If the WebCam is front facing, flip the Mat horizontally. Required for successful detection of AR markers.
-            if (webCamTextureToMatHelper.IsFrontFacing() && !webCamTextureToMatHelper.flipHorizontal)
+            if (webCamTextureToMatHelper.IsFrontFacing() && !webCamTextureToMatHelper.FlipHorizontal)
             {
-                webCamTextureToMatHelper.flipHorizontal = true;
+                webCamTextureToMatHelper.FlipHorizontal = true;
             }
-            else if (!webCamTextureToMatHelper.IsFrontFacing() && webCamTextureToMatHelper.flipHorizontal)
+            else if (!webCamTextureToMatHelper.IsFrontFacing() && webCamTextureToMatHelper.FlipHorizontal)
             {
-                webCamTextureToMatHelper.flipHorizontal = false;
+                webCamTextureToMatHelper.FlipHorizontal = false;
             }
 
             rgbMat4preview = new Mat();
@@ -528,7 +530,7 @@ namespace HoloLensWithOpenCVForUnityExample
             if (enableDownScale)
             {
                 downScaleMat = imageOptimizationHelper.GetDownScaleMat(grayMat);
-                DOWNSCALE_RATIO = imageOptimizationHelper.downscaleRatio;
+                DOWNSCALE_RATIO = imageOptimizationHelper.DownscaleRatio;
             }
             else
             {
@@ -591,10 +593,10 @@ namespace HoloLensWithOpenCVForUnityExample
                                     double[] tvecArr = new double[3];
                                     tvec.get(0, 0, tvecArr);
                                     tvecArr[2] /= DOWNSCALE_RATIO;
-                                    PoseData poseData = ARUtils.ConvertRvecTvecToPoseData(rvecArr, tvecArr);
+                                    PoseData poseData = OpenCVARUtils.ConvertRvecTvecToPoseData(rvecArr, tvecArr);
 
                                     // Create transform matrix.
-                                    transformationM = Matrix4x4.TRS(poseData.pos, poseData.rot, Vector3.one);
+                                    transformationM = Matrix4x4.TRS(poseData.Pos, poseData.Rot, Vector3.one);
 
                                     lock (sync)
                                     {
@@ -653,7 +655,7 @@ namespace HoloLensWithOpenCVForUnityExample
 
                 if (displayCameraPreview && rgbMat4preview != null)
                 {
-                    Utils.matToTexture2D(rgbMat4preview, texture);
+                    OpenCVMatUtils.MatToTexture2D(rgbMat4preview, texture);
                     rgbMat4preview.Dispose();
                 }
 
@@ -674,7 +676,7 @@ namespace HoloLensWithOpenCVForUnityExample
                             }
                             else
                             {
-                                ARUtils.SetTransformFromMatrix(arGameObject.transform, ref ARM);
+                                OpenCVARUtils.SetTransformFromMatrix(arGameObject.transform, ref ARM);
                             }
                         }
                     }
@@ -731,7 +733,7 @@ namespace HoloLensWithOpenCVForUnityExample
                     if (enableDownScale)
                     {
                         downScaleMat = imageOptimizationHelper.GetDownScaleMat(grayMat);
-                        DOWNSCALE_RATIO = imageOptimizationHelper.downscaleRatio;
+                        DOWNSCALE_RATIO = imageOptimizationHelper.DownscaleRatio;
                     }
                     else
                     {
@@ -826,10 +828,10 @@ namespace HoloLensWithOpenCVForUnityExample
                                 double[] tvecArr = new double[3];
                                 tvec.get(0, 0, tvecArr);
                                 tvecArr[2] /= DOWNSCALE_RATIO;
-                                PoseData poseData = ARUtils.ConvertRvecTvecToPoseData(rvecArr, tvecArr);
+                                PoseData poseData = OpenCVARUtils.ConvertRvecTvecToPoseData(rvecArr, tvecArr);
 
                                 // Create transform matrix.
-                                transformationM = Matrix4x4.TRS(poseData.pos, poseData.rot, Vector3.one);
+                                transformationM = Matrix4x4.TRS(poseData.Pos, poseData.Rot, Vector3.one);
 
                                 // Right-handed coordinates system (OpenCV) to left-handed one (Unity)
                                 // https://stackoverflow.com/questions/30234945/change-handedness-of-a-row-major-4x4-transformation-matrix
@@ -874,7 +876,7 @@ namespace HoloLensWithOpenCVForUnityExample
                     }
                 }
 
-                Utils.matToTexture2D(rgbMat4preview, texture);
+                OpenCVMatUtils.MatToTexture2D(rgbMat4preview, texture);
             }
 
             if (arCamera != null && applyEstimationPose)
@@ -892,7 +894,7 @@ namespace HoloLensWithOpenCVForUnityExample
                     }
                     else
                     {
-                        ARUtils.SetTransformFromMatrix(arGameObject.transform, ref ARM);
+                        OpenCVARUtils.SetTransformFromMatrix(arGameObject.transform, ref ARM);
                     }
                 }
             }
@@ -955,7 +957,7 @@ namespace HoloLensWithOpenCVForUnityExample
         void OnDestroy()
         {
 #if WINDOWS_UWP && !DISABLE_HOLOLENSCAMSTREAM_API
-            webCamTextureToMatHelper.frameMatAcquired -= OnFrameMatAcquired;
+            webCamTextureToMatHelper.FrameMatAcquired -= OnFrameMatAcquired;
 #endif
             webCamTextureToMatHelper.Dispose();
             imageOptimizationHelper.Dispose();
@@ -998,7 +1000,7 @@ namespace HoloLensWithOpenCVForUnityExample
         /// </summary>
         public void OnChangeCameraButtonClick()
         {
-            webCamTextureToMatHelper.requestedIsFrontFacing = !webCamTextureToMatHelper.requestedIsFrontFacing;
+            webCamTextureToMatHelper.RequestedIsFrontFacing = !webCamTextureToMatHelper.RequestedIsFrontFacing;
         }
 
         /// <summary>

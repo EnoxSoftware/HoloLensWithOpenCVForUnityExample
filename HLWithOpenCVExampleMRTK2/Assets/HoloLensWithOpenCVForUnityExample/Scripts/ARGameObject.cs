@@ -1,4 +1,4 @@
-using OpenCVForUnity.UnityUtils;
+using OpenCVForUnity.UnityIntegration;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -30,8 +30,8 @@ namespace HoloLensWithOpenCVForUnityExample
             Vector3 previousPosition = transform.localPosition;
             Quaternion previousRotation = transform.localRotation;
 
-            Vector3 targetPosition = ARUtils.ExtractTranslationFromMatrix(ref localToWorldMatrix);
-            Quaternion targetRotation = ARUtils.ExtractRotationFromMatrix(ref localToWorldMatrix);
+            Vector3 targetPosition = OpenCVARUtils.ExtractTranslationFromMatrix(ref localToWorldMatrix);
+            Quaternion targetRotation = OpenCVARUtils.ExtractRotationFromMatrix(ref localToWorldMatrix);
 
             if (!smoothing)
             {

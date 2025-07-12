@@ -1,6 +1,6 @@
 using OpenCVForUnity.CoreModule;
 using OpenCVForUnity.ImgprocModule;
-using OpenCVForUnity.UnityUtils;
+using OpenCVForUnity.UnityIntegration;
 using System;
 
 namespace HoloLensWithOpenCVForUnityExample
@@ -37,7 +37,7 @@ namespace HoloLensWithOpenCVForUnityExample
                 if (blackThresh <= i && i < grayThresh)
                     lutArray[i] = 255;
             }
-            MatUtils.copyToMat(lutArray, grayLUT);
+            OpenCVMatUtils.CopyToMat(lutArray, grayLUT);
 
             if (drawMainLine)
             {
@@ -57,7 +57,7 @@ namespace HoloLensWithOpenCVForUnityExample
                     contrastAdjustmentsLUTArray[i] = (a > byte.MaxValue) ? (byte)255 : (byte)a;
 
                 }
-                MatUtils.copyToMat(contrastAdjustmentsLUTArray, contrastAdjustmentsLUT);
+                OpenCVMatUtils.CopyToMat(contrastAdjustmentsLUTArray, contrastAdjustmentsLUT);
             }
         }
 
