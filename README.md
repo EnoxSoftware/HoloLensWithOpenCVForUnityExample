@@ -15,8 +15,9 @@
 * [EnoxSoftware/HoloLensCameraStream](https://github.com/EnoxSoftware/HoloLensCameraStream)
 
 
-[!IMPORTANT]
-## Development Environment Setup
+---
+
+## **:warning:IMPORTANT**: Development Environment Setup
 The setup procedure for HoloLens projects using Unity and MRTK has changed significantly. The legacy Mixed Reality Feature Tool no longer functions on the latest Windows 11 environments.
 
 ### Prerequisites (OpenXR Stack)
