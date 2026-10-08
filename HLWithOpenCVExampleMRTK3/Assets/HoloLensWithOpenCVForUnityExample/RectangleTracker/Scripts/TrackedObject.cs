@@ -101,7 +101,7 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
 
             LastPositions.Add(rect.clone());
 
-            this.Id = id;
+            Id = id;
         }
     }
 }

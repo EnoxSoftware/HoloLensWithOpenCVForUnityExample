@@ -40,7 +40,6 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
         private List<float> _weightsPositionsSmoothing = new List<float>();
         private List<float> _weightsSizesSmoothing = new List<float>();
 
-
         // Public Properties
         /// <summary>
         /// Gets the list of currently tracked objects.
@@ -112,11 +111,11 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
 
             if (trackerParamerers != null)
             {
-                this._trackerParameters = trackerParamerers;
+                _trackerParameters = trackerParamerers;
             }
             else
             {
-                this._trackerParameters = new TrackerParameters();
+                _trackerParameters = new TrackerParameters();
             }
 
             _weightsPositionsSmoothing.Add(1);
@@ -148,7 +147,9 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
                 }
 
                 if (_trackedObjects[i].State > TrackedState.NEW_DISPLAYED && _trackedObjects[i].State < TrackedState.NEW_HIDED)
+                {
                     result.Add(r);
+                }
 
                 //LOGD("DetectionBasedTracker::process: found a object with SIZE %d x %d, rect={%d, %d, %d x %d}", r.width, r.height, r.x, r.y, r.width, r.height);
                 //Debug.Log("GetObjects" + r.width + " " + r.height + " " + r.x + " " + r.y + " " + r.width + " " + r.height + " " + trackedObjects[i].state + " " + trackedObjects[i].numDetectedFrames + " " + trackedObjects[i].numFramesNotDetected);
@@ -193,22 +194,23 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
         public void UpdateTrackedObjects(List<Rect> detectedObjects)
         {
             if (detectedObjects == null)
+            {
                 throw new ArgumentNullException("detectedObjects");
+            }
 
             Rect[] correctionRects = CreateCorrectionBySpeedOfRects();
 
-            int N1 = (int)_trackedObjects.Count;
-            int N2 = (int)detectedObjects.Count;
+            int n1 = (int)_trackedObjects.Count;
+            int n2 = (int)detectedObjects.Count;
 
-            for (int i = 0; i < N1; i++)
+            for (int i = 0; i < n1; i++)
             {
                 _trackedObjects[i].NumDetectedFrames++;
             }
 
-            int[] correspondence = Enumerable.Repeat<int>((int)TrackedRectState.NEW_RECTANGLE, N2).ToArray();
+            int[] correspondence = Enumerable.Repeat<int>((int)TrackedRectState.NEW_RECTANGLE, n2).ToArray();
 
-
-            for (int i = 0; i < N1; i++)
+            for (int i = 0; i < n1; i++)
             {
                 TrackedObject curObject = _trackedObjects[i];
 
@@ -217,7 +219,7 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
 
                 Rect prevRect = correctionRects[i];
 
-                for (int j = 0; j < N2; j++)
+                for (int j = 0; j < n2; j++)
                 {
                     if (correspondence[j] >= 0)
                     {
@@ -260,10 +262,12 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
 
                     Rect bestRect = detectedObjects[bestIndex];
 
-                    for (int j = 0; j < N2; j++)
+                    for (int j = 0; j < n2; j++)
                     {
                         if (correspondence[j] >= 0)
+                        {
                             continue;
+                        }
 
                         if (IsCollideByRectangle(detectedObjects[j], bestRect, _trackerParameters.CoeffRectangleOverlap))
                         {
@@ -286,7 +290,7 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
             }
 
             //Debug.Log("DetectionBasedTracker::updateTrackedObjects: start second cycle");
-            for (int j = 0; j < N2; j++)
+            for (int j = 0; j < n2; j++)
             {
                 int i = correspondence[j];
                 if (i >= 0)
@@ -301,7 +305,9 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
                     }
                     _trackedObjects[i].NumFramesNotDetected = 0;
                     if (_trackedObjects[i].State != TrackedState.DELETED)
+                    {
                         _trackedObjects[i].State = TrackedState.DISPLAYED;
+                    }
                 }
                 else if (i == (int)TrackedRectState.NEW_RECTANGLE)
                 {
@@ -388,9 +394,9 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
                 if (n > 1)
                 {
                     Point center = CenterRect(r);
-                    Point _centerPrev = CenterRect(_trackedObjects[i].LastPositions[n - 2]);
-                    Point shift = new Point((center.x - _centerPrev.x) * _trackerParameters.CoeffObjectSpeedUsingInPrediction,
-                                      (center.y - _centerPrev.y) * _trackerParameters.CoeffObjectSpeedUsingInPrediction);
+                    Point centerPrev = CenterRect(_trackedObjects[i].LastPositions[n - 2]);
+                    Point shift = new Point((center.x - centerPrev.x) * _trackerParameters.CoeffObjectSpeedUsingInPrediction,
+                                      (center.y - centerPrev.y) * _trackerParameters.CoeffObjectSpeedUsingInPrediction);
 
                     r.x += (int)Math.Round(shift.x);
                     r.y += (int)Math.Round(shift.y);
@@ -451,24 +457,24 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
 
             List<Rect> lastPositions = _trackedObjects[i].LastPositions;
 
-            int N = lastPositions.Count;
-            if (N <= 0)
+            int n = lastPositions.Count;
+            if (n <= 0)
             {
                 Debug.Log("DetectionBasedTracker::calcTrackedObjectPositionToShow: ERROR: no positions for i=" + i);
                 return new Rect();
             }
 
-            int Nsize = Math.Min(N, (int)weightsSizesSmoothing.Count);
-            int Ncenter = Math.Min(N, (int)weightsPositionsSmoothing.Count);
+            int nsize = Math.Min(n, (int)weightsSizesSmoothing.Count);
+            int ncenter = Math.Min(n, (int)weightsPositionsSmoothing.Count);
 
             Point center = new Point();
             double w = 0, h = 0;
-            if (Nsize > 0)
+            if (nsize > 0)
             {
                 double sum = 0;
-                for (int j = 0; j < Nsize; j++)
+                for (int j = 0; j < nsize; j++)
                 {
-                    int k = N - j - 1;
+                    int k = n - j - 1;
                     w += lastPositions[k].width * weightsSizesSmoothing[j];
                     h += lastPositions[k].height * weightsSizesSmoothing[j];
                     sum += weightsSizesSmoothing[j];
@@ -478,16 +484,16 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
             }
             else
             {
-                w = lastPositions[N - 1].width;
-                h = lastPositions[N - 1].height;
+                w = lastPositions[n - 1].width;
+                h = lastPositions[n - 1].height;
             }
 
-            if (Ncenter > 0)
+            if (ncenter > 0)
             {
                 double sum = 0;
-                for (int j = 0; j < Ncenter; j++)
+                for (int j = 0; j < ncenter; j++)
                 {
-                    int k = N - j - 1;
+                    int k = n - j - 1;
                     Point tl = lastPositions[k].tl();
                     Point br = lastPositions[k].br();
                     Point c1;
@@ -505,7 +511,7 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
             }
             else
             {
-                int k = N - 1;
+                int k = n - 1;
                 Point tl = lastPositions[k].tl();
                 Point br = lastPositions[k].br();
                 Point c1;
@@ -533,9 +539,13 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
             int y2 = Math.Min(a.y + a.height, b.y + b.height);
 
             if (x2 >= x1 && y2 >= y1)
+            {
                 return new Rect(x1, y1, x2 - x1, y2 - y1);
+            }
             else
+            {
                 return new Rect();
+            }
         }
 
         private bool IsCollideByRectangle(Rect a, Rect b, float coeffRectangleOverlap)
@@ -555,9 +565,13 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
             int ey2 = (int)(ey1 + eh);
 
             if (mx1 <= ex2 && ex1 <= mx2 && my1 <= ey2 && ey1 <= my2)
+            {
                 return true;
+            }
             else
+            {
                 return false;
+            }
         }
     }
 }

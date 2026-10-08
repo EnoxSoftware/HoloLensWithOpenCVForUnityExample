@@ -23,30 +23,57 @@ namespace HoloLensWithOpenCVForUnityExample
     /// </summary>
     public class HLCameraIntrinsicsCheckerHelper : MonoBehaviour
     {
+        // Constants
+#if WINDOWS_UWP
+        private static readonly Queue<Action> EXECUTE_ON_MAIN_THREAD = new Queue<Action>();
+#endif
+
+        // Public Fields
         public Text ResultText;
 
 #if WINDOWS_UWP
-        CameraIntrinsicsChecker cameraIntrinsicsChecker;
+        // Private Fields
+        private CameraIntrinsicsChecker _cameraIntrinsicsChecker;
 
-        readonly static Queue<Action> ExecuteOnMainThread = new Queue<Action>();
-
-        // Use this for initialization
-        void Start()
+        // Unity Lifecycle Methods
+        private void Start()
         {
             CameraIntrinsicsChecker.CreateAync(OnCameraIntrinsicsCheckerInstanceCreated);
         }
 
-        void OnDestroy()
+        private void OnDestroy()
         {
-            if (cameraIntrinsicsChecker != null)
-                cameraIntrinsicsChecker.Dispose();
+            _cameraIntrinsicsChecker?.Dispose();
         }
 
+        private void Update()
+        {
+            lock (EXECUTE_ON_MAIN_THREAD)
+            {
+                while (EXECUTE_ON_MAIN_THREAD.Count > 0)
+                {
+                    EXECUTE_ON_MAIN_THREAD.Dequeue().Invoke();
+                }
+            }
+        }
+#endif
+
+        // Public Methods
+        /// <summary>
+        /// Raises the back button click event.
+        /// </summary>
+        public void OnBackButtonClick()
+        {
+            SceneManager.LoadScene("HoloLensWithOpenCVForUnityExample");
+        }
+
+#if WINDOWS_UWP
+        // Private Methods
         private void OnCameraIntrinsicsCheckerInstanceCreated(CameraIntrinsicsChecker checker)
         {
             if (checker == null)
             {
-                Debug.LogError("Creating the CameraIntrinsicsChecker object failed.");
+                Debug.LogError("Creating the CameraIntrinsicsChecker object failed.", this);
                 return;
             }
 
@@ -62,7 +89,7 @@ namespace HoloLensWithOpenCVForUnityExample
                 }
             });
 
-            this.cameraIntrinsicsChecker = checker;
+            _cameraIntrinsicsChecker = checker;
 
             checker.GetCameraIntrinsicsAync(OnCameraIntrinsicsGot);
         }
@@ -71,13 +98,13 @@ namespace HoloLensWithOpenCVForUnityExample
         {
             if (cameraIntrinsics == null)
             {
-                Debug.LogError("Getting the CameraIntrinsics object failed.");
+                Debug.LogError("Getting the CameraIntrinsics object failed.", this);
                 return;
             }
 
             double calculatedFrameRate = (double)property.FrameRate.Numerator / (double)property.FrameRate.Denominator;
 
-            String result = "\n" + "=============================================";
+            string result = "\n" + "=============================================";
             result += "\n" + "==== Size: " + property.Width + "x" + property.Height + " FrameRate: " + (int)Math.Round(calculatedFrameRate) + "====";
             result += "\n" + "FocalLength: " + cameraIntrinsics.FocalLength;
             result += "\n" + "ImageHeight: " + cameraIntrinsics.ImageHeight;
@@ -87,51 +114,40 @@ namespace HoloLensWithOpenCVForUnityExample
             result += "\n" + "TangentialDistortion: " + cameraIntrinsics.TangentialDistortion;
             result += "\n" + "=============================================";
 
-            Debug.Log(result);
+            Debug.Log(result, this);
 
             Enqueue(() =>
             {
                 ResultText.text += result;
             });
-
-        }
-        private void Update()
-        {
-            lock (ExecuteOnMainThread)
-            {
-                while (ExecuteOnMainThread.Count > 0)
-                {
-                    ExecuteOnMainThread.Dequeue().Invoke();
-                }
-            }
         }
 
         private void Enqueue(Action action)
         {
-            lock (ExecuteOnMainThread)
+            lock (EXECUTE_ON_MAIN_THREAD)
             {
-                ExecuteOnMainThread.Enqueue(action);
+                EXECUTE_ON_MAIN_THREAD.Enqueue(action);
             }
         }
 #endif
-
-        /// <summary>
-        /// Raises the back button click event.
-        /// </summary>
-        public void OnBackButtonClick()
-        {
-            SceneManager.LoadScene("HoloLensWithOpenCVForUnityExample");
-        }
     }
 
 #if WINDOWS_UWP
 
     public class CameraIntrinsicsChecker
     {
-        public delegate void OnVideoCaptureResourceCreatedCallback(CameraIntrinsicsChecker chakerObject);
+        // Public Fields
+        public static int _hololensDevice = 0;
+        public static MediaStreamType _mediaStreamType = MediaStreamType.VideoPreview;
 
-        public delegate void OnCameraIntrinsicsGotCallback(CameraIntrinsics cameraIntrinsics, VideoEncodingProperties property);
+        // Private Fields
+        private readonly MediaFrameSourceGroup _frameSourceGroup;
+        private readonly MediaFrameSourceInfo _frameSourceInfo;
+        private readonly DeviceInformation _deviceInfo;
+        private MediaCapture _mediaCapture;
+        private MediaFrameReader _frameReader;
 
+        // Public Properties
         public bool IsStreaming
         {
             get
@@ -140,22 +156,7 @@ namespace HoloLensWithOpenCVForUnityExample
             }
         }
 
-        static public int _hololensDevice = 0;
-        static public MediaStreamType _mediaStreamType = MediaStreamType.VideoPreview;
-
-        MediaFrameSourceGroup _frameSourceGroup;
-        MediaFrameSourceInfo _frameSourceInfo;
-        DeviceInformation _deviceInfo;
-        MediaCapture _mediaCapture;
-        MediaFrameReader _frameReader;
-
-        CameraIntrinsicsChecker(MediaFrameSourceGroup frameSourceGroup, MediaFrameSourceInfo frameSourceInfo, DeviceInformation deviceInfo)
-        {
-            _frameSourceGroup = frameSourceGroup;
-            _frameSourceInfo = frameSourceInfo;
-            _deviceInfo = deviceInfo;
-        }
-
+        // Public Methods
         public static async void CreateAync(OnVideoCaptureResourceCreatedCallback onCreatedCallback)
         {
             // Whether it is running on HoloLens 1 or HoloLens 2.
@@ -297,14 +298,21 @@ namespace HoloLensWithOpenCVForUnityExample
             _mediaCapture?.Dispose();
         }
 
-        async Task CreateMediaCaptureAsync()
+        // Private Methods
+        private CameraIntrinsicsChecker(MediaFrameSourceGroup frameSourceGroup, MediaFrameSourceInfo frameSourceInfo, DeviceInformation deviceInfo)
+        {
+            _frameSourceGroup = frameSourceGroup;
+            _frameSourceInfo = frameSourceInfo;
+            _deviceInfo = deviceInfo;
+        }
+
+        private async Task CreateMediaCaptureAsync()
         {
             if (_mediaCapture != null)
             {
                 throw new Exception("The MediaCapture object has already been created.");
             }
 
-            
             // from https://github.com/qian256/HoloLensARToolKit/blob/bef36a89f191ab7d389d977c46639376069bbed6/HoloLensARToolKit/Assets/ARToolKitUWP/Scripts/ARUWPVideo.cs#L301
             _mediaCapture = new MediaCapture();
             if (_hololensDevice == 1 || _hololensDevice == 0)
@@ -348,11 +356,15 @@ namespace HoloLensWithOpenCVForUnityExample
             _mediaCapture.VideoDeviceController.Focus.TrySetAuto(true);
         }
 
-        static bool IsColorVideo(MediaFrameSourceInfo sourceInfo)
+        private static bool IsColorVideo(MediaFrameSourceInfo sourceInfo)
         {
             return (sourceInfo.MediaStreamType == _mediaStreamType &&
                 sourceInfo.SourceKind == MediaFrameSourceKind.Color);
         }
+
+        public delegate void OnVideoCaptureResourceCreatedCallback(CameraIntrinsicsChecker chakerObject);
+
+        public delegate void OnCameraIntrinsicsGotCallback(CameraIntrinsics cameraIntrinsics, VideoEncodingProperties property);
     }
 #endif
 }

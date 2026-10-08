@@ -41,10 +41,10 @@ namespace HoloLensWithOpenCVForUnityExample.RectangleTrack
         public TrackedRect(int id, Rect rect, TrackedState state, int numDetectedFrames, int numFramesNotDetected)
             : base(rect.x, rect.y, rect.width, rect.height)
         {
-            this.NumDetectedFrames = numDetectedFrames;
-            this.NumFramesNotDetected = numFramesNotDetected;
-            this.Id = id;
-            this.State = state;
+            NumDetectedFrames = numDetectedFrames;
+            NumFramesNotDetected = numFramesNotDetected;
+            Id = id;
+            State = state;
         }
     }
 }
